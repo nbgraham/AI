@@ -1,6 +1,8 @@
 package grah8384;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -22,6 +24,7 @@ public class KnowledgeRepresentation {
 	 * The space that the team is operating in
 	 */
 	Toroidal2DPhysics space;
+	Map<UUID, UUID> asteroidToShip;
 	
 	/**
 	 * Creates a new knowledge representation for the <code>team</code> based on the give <code>space</code>
@@ -33,6 +36,7 @@ public class KnowledgeRepresentation {
 	{
 		this.team = team;
 		this.space = space;
+		asteroidToShip = new HashMap<UUID, UUID>();
 				
 	}
 	
@@ -107,7 +111,7 @@ public class KnowledgeRepresentation {
 		
 		for ( Asteroid asteroid : asteroids)
 		{
-			if(!asteroid.isAlive() || !asteroid.isMineable()) continue;
+			if(asteroidToShip.containsKey(asteroid.getId()) || !asteroid.isAlive() || !asteroid.isMineable()) continue;
 			
 			distanceToAsteroid = space.findShortestDistance(ship.getPosition(), asteroid.getPosition());
 			totalValue = asteroid.getResources().getTotal();
@@ -122,6 +126,13 @@ public class KnowledgeRepresentation {
 		}
 		
 		return bestAsteroid;
+	}
+	
+	public Asteroid claimBestAsteroid(Ship ship)
+	{
+		Asteroid asteroid = findBestAsteroid(ship);
+		if (asteroid != null) asteroidToShip.put(asteroid.getId(), ship.getId());
+		return asteroid;
 	}
 	
 	/**

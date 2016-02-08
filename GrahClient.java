@@ -62,63 +62,46 @@ public class GrahClient extends TeamClient {
 		for (AbstractObject actionable :  actionableObjects) {
 			if (actionable instanceof Ship) {
 				Ship ship = (Ship) actionable;
-				AbstractAction current = ship.getCurrentAction();
+				AbstractAction currentAction = ship.getCurrentAction();
 				Position currentPosition = ship.getPosition();
-
-				AbstractAction nextAction = null;
-				AbstractObject nextObjective = null;
+				AbstractAction nextAction = currentAction;
 				
-				//Decide on objective
-				if (model.isEnergyLow(ship))
-				{
-					nextObjective = model.findNearestEnergySource(ship);
-					if (nextObjective != null) System.out.println("Energy source");
-				}
-				else if (model.isCargoNearFull(ship))
-				{
-					nextObjective = model.findNearestBase(ship);
-					if (nextObjective != null) System.out.println("Cargo full. Home");
-				}				
-				else if (current == null || current.isMovementFinished(space) || actionDone(space, ship, current))
-				{
-					nextObjective = model.findBestAsteroid(ship);
-					if (nextObjective != null) System.out.println("Asteroid hunting");
-				}
-				else
-				{
-					if (current instanceof ActionObjective && ((ActionObjective)current).getObjective().isAlive())
+				if (currentAction == null || currentAction.isMovementFinished(space)) {
+					nextAction = new DoNothingAction();
+					
+					AbstractObject nearestAsteroid = model.claimBestAsteroid(ship);
+					if (nearestAsteroid == null)
 					{
-						nextObjective = ((ActionObjective)current).getObjective();
+						AbstractObject nearestBeacon = model.findNearestBeacon(ship);
+						if (nearestBeacon != null)
+						{
+							nextAction = new MoveAction(space, currentPosition, nearestBeacon.getPosition());
+							System.out.println("Beacon");
+						}
+						else
+						{
+							System.out.println("Do nothing");
+						}
 					}
 					else
 					{
-						nextObjective = null;
-						nextAction = new DoNothingAction();
-						System.out.println("Object died. Stopping action.");
+						nextAction = new MoveAction(space, currentPosition, nearestAsteroid.getPosition());
+						System.out.println("Asteroid");
 					}
 				}
-				
-				
-				//Create action
-				if (nextAction == null)
+				else
 				{
-					nextAction =  new ActionObjective(space, currentPosition, nextObjective);
-					if (nextObjective != null)
-					{
-						SpacewarGraphics graphic = new CircleGraphics(5, getTeamColor(), nextObjective.getPosition());
-						graphics.add(graphic);
-					}
+					System.out.print(".");
 				}
 				
-				//Put action in list
-				nextActions.put(ship.getId(), nextAction);
-				
-			} else {
+				nextActions.put(ship.getId(), nextAction);		
+			} 
+			else
+			{
 				// it is a base and random doesn't do anything to bases
 				nextActions.put(actionable.getId(), new DoNothingAction());
-		}
+			}
 			
-
 		}
 	
 		return nextActions;
