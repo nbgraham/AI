@@ -102,29 +102,18 @@ public class KnowledgeRepresentation {
 	public Asteroid findBestAsteroid(Ship ship)
 	{
 		Set<Asteroid> asteroids = space.getAsteroids();
+		int bestMoney = Integer.MIN_VALUE;
 		Asteroid bestAsteroid = null;
-		
-		double bestScore = Double.MIN_VALUE;
-		double distanceToAsteroid;
-		int totalValue;
-		double score;
-		
-		for ( Asteroid asteroid : asteroids)
-		{
-			if(asteroidToShip.containsKey(asteroid.getId()) || !asteroid.isAlive() || !asteroid.isMineable()) continue;
-			
-			distanceToAsteroid = space.findShortestDistance(ship.getPosition(), asteroid.getPosition());
-			totalValue = asteroid.getResources().getTotal();
-			
-			score = totalValue*100 - distanceToAsteroid;
-			if ( distanceToAsteroid > bestScore )
-			{
-				bestScore = score;
-				bestAsteroid = asteroid;
+
+		for (Asteroid asteroid : asteroids) {
+			if (!asteroidToShip.containsKey(asteroid.getId())) {
+				if (asteroid.isMineable() && asteroid.getResources().getTotal() > bestMoney) {
+					bestMoney = asteroid.getResources().getTotal();
+					bestAsteroid = asteroid;
+				}
 			}
-					
 		}
-		
+		//System.out.println("Best asteroid has " + bestMoney);
 		return bestAsteroid;
 	}
 	

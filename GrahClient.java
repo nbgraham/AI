@@ -12,7 +12,6 @@ import spacesettlers.actions.DoNothingAction;
 import spacesettlers.actions.MoveAction;
 import spacesettlers.actions.PurchaseCosts;
 import spacesettlers.actions.PurchaseTypes;
-import spacesettlers.graphics.CircleGraphics;
 import spacesettlers.graphics.SpacewarGraphics;
 import spacesettlers.objects.AbstractActionableObject;
 import spacesettlers.objects.AbstractObject;
@@ -62,38 +61,11 @@ public class GrahClient extends TeamClient {
 		for (AbstractObject actionable :  actionableObjects) {
 			if (actionable instanceof Ship) {
 				Ship ship = (Ship) actionable;
+				
 				AbstractAction currentAction = ship.getCurrentAction();
 				Position currentPosition = ship.getPosition();
-				AbstractAction nextAction = currentAction;
 				
-				if (currentAction == null || currentAction.isMovementFinished(space)) {
-					nextAction = new DoNothingAction();
-					
-					AbstractObject nearestAsteroid = model.claimBestAsteroid(ship);
-					if (nearestAsteroid == null)
-					{
-						AbstractObject nearestBeacon = model.findNearestBeacon(ship);
-						if (nearestBeacon != null)
-						{
-							nextAction = new MoveAction(space, currentPosition, nearestBeacon.getPosition());
-							System.out.println("Beacon");
-						}
-						else
-						{
-							System.out.println("Do nothing");
-						}
-					}
-					else
-					{
-						nextAction = new MoveAction(space, currentPosition, nearestAsteroid.getPosition());
-						System.out.println("Asteroid");
-					}
-				}
-				else
-				{
-					System.out.print(".");
-				}
-				
+				AbstractAction nextAction = getNextAction(currentAction, space, ship, currentPosition);
 				nextActions.put(ship.getId(), nextAction);		
 			} 
 			else
@@ -109,14 +81,47 @@ public class GrahClient extends TeamClient {
 	}
 
 
-	private boolean actionDone(Toroidal2DPhysics space, Ship ship, AbstractAction action) 
-	{
-		if (action instanceof ActionObjective)
+	private AbstractAction getNextAction(AbstractAction currentAction, Toroidal2DPhysics space,
+			Ship ship, Position currentPosition) {
+		
+		if (model.isEnergyLow(ship))
 		{
-			ActionObjective actionObj = (ActionObjective) action;
-			return space.findShortestDistance(actionObj.getObjective().getPosition(), ship.getPosition()) < 5;
+			AbstractObject nearestEnergySource = model.findNearestEnergySource(ship);
+			
+			if (nearestEnergySource != null)
+			{
+				System.out.println("Energy");
+				return new MoveAction(space, currentPosition, nearestEnergySource.getPosition());
+
+			}
 		}
-		return false;
+		
+		if (currentAction == null || currentAction.isMovementFinished(space)) {			
+			AbstractObject nearestAsteroid = model.claimBestAsteroid(ship);
+			if (nearestAsteroid == null)
+			{
+				AbstractObject nearestBeacon = model.findNearestBeacon(ship);
+				if (nearestBeacon != null)
+				{
+					System.out.println("Beacon");
+					return new MoveAction(space, currentPosition, nearestBeacon.getPosition());
+				}
+				else
+				{
+					System.out.println("Do nothing");
+					return new DoNothingAction();
+				}
+			}
+			else
+			{
+				System.out.println("Asteroid");
+				return new MoveAction(space, currentPosition, nearestAsteroid.getPosition());
+			}
+		}
+		
+		//Keep doing what you're doing
+		System.out.print(".");
+		return currentAction;
 	}
 
 	@Override
