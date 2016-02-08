@@ -33,8 +33,9 @@ import spacesettlers.clients.TeamClient;
  */
 public class GrahClient extends TeamClient {
 	HashSet<SpacewarGraphics> graphics;
+	KnowledgeRepresentation model;
 	Random random;
-	boolean fired = false;
+ 	boolean fired = false;
 	
 	public static int RANDOM_MOVE_RADIUS = 200;
 	public static double SHOOT_PROBABILITY = 0.1;
@@ -43,6 +44,7 @@ public class GrahClient extends TeamClient {
 	public void initialize(Toroidal2DPhysics space) {
 		graphics = new HashSet<SpacewarGraphics>();
 		random = new Random();
+		model = new KnowledgeRepresentation(this, space);
 	}
 
 	@Override
@@ -55,43 +57,84 @@ public class GrahClient extends TeamClient {
 	@Override
 	public Map<UUID, AbstractAction> getMovementStart(Toroidal2DPhysics space,
 			Set<AbstractActionableObject> actionableObjects) {
-		HashMap<UUID, AbstractAction> randomActions = new HashMap<UUID, AbstractAction>();
+		HashMap<UUID, AbstractAction> nextActions = new HashMap<UUID, AbstractAction>();
 		
 		for (AbstractObject actionable :  actionableObjects) {
 			if (actionable instanceof Ship) {
 				Ship ship = (Ship) actionable;
 				AbstractAction current = ship.getCurrentAction();
+				Position currentPosition = ship.getPosition();
+
+				AbstractAction nextAction = null;
+				AbstractObject nextObjective = null;
 				
-				// if we finished, make a new spot in space to aim for
-				if (current == null || current.isMovementFinished(space)) {
-					Position currentPosition = ship.getPosition();
-					Position newGoal = space.getRandomFreeLocationInRegion(random, Ship.SHIP_RADIUS, (int) currentPosition.getX(), 
-							(int) currentPosition.getY(), RANDOM_MOVE_RADIUS);
-					MoveAction newAction = null;
-					newAction = new MoveAction(space, currentPosition, newGoal);
-					//System.out.println("Ship is at " + currentPosition + " and goal is " + newGoal);
-					SpacewarGraphics graphic = new CircleGraphics(1, getTeamColor(), newGoal);
-					graphics.add(graphic);
-					//Vector2D shortVec = space.findShortestDistanceVector(currentPosition, newGoal);
-					//LineShadow lineShadow = new LineShadow(currentPosition, newGoal, shortVec);
-					//newShadows.add(lineShadow);
-					randomActions.put(ship.getId(), newAction);
-				} else {
-					randomActions.put(ship.getId(), ship.getCurrentAction());
+				//Decide on objective
+				if (model.isEnergyLow(ship))
+				{
+					nextObjective = model.findNearestEnergySource(ship);
+					if (nextObjective != null) System.out.println("Energy source");
 				}
+				else if (model.isCargoNearFull(ship))
+				{
+					nextObjective = model.findNearestBase(ship);
+					if (nextObjective != null) System.out.println("Cargo full. Home");
+				}				
+				else if (current == null || current.isMovementFinished(space) || actionDone(space, ship, current))
+				{
+					nextObjective = model.findBestAsteroid(ship);
+					if (nextObjective != null) System.out.println("Asteroid hunting");
+				}
+				else
+				{
+					if (current instanceof ActionObjective && ((ActionObjective)current).getObjective().isAlive())
+					{
+						nextObjective = ((ActionObjective)current).getObjective();
+					}
+					else
+					{
+						nextObjective = null;
+						nextAction = new DoNothingAction();
+						System.out.println("Object died. Stopping action.");
+					}
+				}
+				
+				
+				//Create action
+				if (nextAction == null)
+				{
+					nextAction =  new ActionObjective(space, currentPosition, nextObjective);
+					if (nextObjective != null)
+					{
+						SpacewarGraphics graphic = new CircleGraphics(5, getTeamColor(), nextObjective.getPosition());
+						graphics.add(graphic);
+					}
+				}
+				
+				//Put action in list
+				nextActions.put(ship.getId(), nextAction);
 				
 			} else {
 				// it is a base and random doesn't do anything to bases
-				randomActions.put(actionable.getId(), new DoNothingAction());
+				nextActions.put(actionable.getId(), new DoNothingAction());
 		}
 			
 
 		}
 	
-		return randomActions;
+		return nextActions;
 	
 	}
 
+
+	private boolean actionDone(Toroidal2DPhysics space, Ship ship, AbstractAction action) 
+	{
+		if (action instanceof ActionObjective)
+		{
+			ActionObjective actionObj = (ActionObjective) action;
+			return space.findShortestDistance(actionObj.getObjective().getPosition(), ship.getPosition()) < 5;
+		}
+		return false;
+	}
 
 	@Override
 	public void getMovementEnd(Toroidal2DPhysics space, Set<AbstractActionableObject> actionableObjects) {
@@ -128,7 +171,10 @@ public class GrahClient extends TeamClient {
 		for (AbstractObject actionable :  actionableObjects) {
 			if (actionable instanceof Ship) {
 				Ship ship = (Ship) actionable;
-				if (random.nextDouble() < SHOOT_PROBABILITY) {
+				double shootProbability = SHOOT_PROBABILITY;
+				shootProbability *= model.findNearbyEnemiesByID(ship).size();
+				
+				if (random.nextDouble() < shootProbability) {
 					AbstractWeapon newBullet = ship.getNewWeapon(SpaceSettlersPowerupEnum.FIRE_MISSILE);
 					if (newBullet != null) {
 						powerupMap.put(ship.getId(), SpaceSettlersPowerupEnum.FIRE_MISSILE);
@@ -138,6 +184,26 @@ public class GrahClient extends TeamClient {
 			}
 		}
 		return powerupMap;
+	}
+	
+	class ActionObjective extends MoveAction
+	{
+		private AbstractObject objective;
+
+		public ActionObjective(Toroidal2DPhysics space, Position currentPosition, AbstractObject objective) {
+			super(space, currentPosition, objective == null ? currentPosition : objective.getPosition());
+			this.objective = objective;
+		}
+
+		public void setObjective(AbstractObject objective)
+		{
+			this.objective = objective;
+		}
+		
+		public AbstractObject getObjective ()
+		{
+			return objective;
+		}
 	}
 
 

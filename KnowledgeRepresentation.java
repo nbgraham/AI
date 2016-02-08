@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import spacesettlers.clients.TeamClient;
+import spacesettlers.objects.AbstractObject;
 import spacesettlers.objects.Asteroid;
 import spacesettlers.objects.Base;
 import spacesettlers.objects.Beacon;
@@ -72,6 +73,8 @@ public class KnowledgeRepresentation {
 		
 		for ( Base base : bases)
 		{
+			if (!base.isAlive()) continue;
+			
 			distanceToBase = space.findShortestDistance(ship.getPosition(), base.getPosition());
 			
 			if ( distanceToBase < minDistance )
@@ -92,27 +95,33 @@ public class KnowledgeRepresentation {
 	 * @param ship
 	 * @return
 	 */
-	public Asteroid findNearestAsteroid(Ship ship)
+	public Asteroid findBestAsteroid(Ship ship)
 	{
 		Set<Asteroid> asteroids = space.getAsteroids();
-		Asteroid nearestAsteroid = null;
+		Asteroid bestAsteroid = null;
 		
-		double minDistance = Double.MAX_VALUE;
+		double bestScore = Double.MIN_VALUE;
 		double distanceToAsteroid;
+		int totalValue;
+		double score;
 		
 		for ( Asteroid asteroid : asteroids)
 		{
-			distanceToAsteroid = space.findShortestDistance(ship.getPosition(), asteroid.getPosition());
+			if(!asteroid.isAlive() || !asteroid.isMineable()) continue;
 			
-			if ( distanceToAsteroid < minDistance )
+			distanceToAsteroid = space.findShortestDistance(ship.getPosition(), asteroid.getPosition());
+			totalValue = asteroid.getResources().getTotal();
+			
+			score = totalValue*100 - distanceToAsteroid;
+			if ( distanceToAsteroid > bestScore )
 			{
-				minDistance = distanceToAsteroid;
-				nearestAsteroid = asteroid;
+				bestScore = score;
+				bestAsteroid = asteroid;
 			}
 					
 		}
 		
-		return nearestAsteroid;
+		return bestAsteroid;
 	}
 	
 	/**
@@ -132,6 +141,8 @@ public class KnowledgeRepresentation {
 		
 		for ( Beacon beacon : beacons)
 		{
+			if (!beacon.isAlive()) continue;
+			
 			distanceToBeacon = space.findShortestDistance(ship.getPosition(), beacon.getPosition());
 			
 			if ( distanceToBeacon < minDistance )
@@ -174,5 +185,19 @@ public class KnowledgeRepresentation {
 		}
 		
 		return nearbyEnemiesIDs;
+	}
+	
+	/**
+	 * Returns the nearest source of energy, or null if there is none
+	 * @param ship
+	 * @return
+	 */
+	public AbstractObject findNearestEnergySource(Ship ship)
+	{
+		Beacon nearestBeacon = findNearestBeacon(ship);
+		Base nearestBase = findNearestBase(ship);
+		
+		if (nearestBeacon == null) return nearestBase;
+		return nearestBeacon;
 	}
 }
