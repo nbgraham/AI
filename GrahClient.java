@@ -10,6 +10,7 @@ import java.util.UUID;
 import spacesettlers.actions.AbstractAction;
 import spacesettlers.actions.DoNothingAction;
 import spacesettlers.actions.MoveAction;
+import spacesettlers.actions.MoveToObjectAction;
 import spacesettlers.actions.PurchaseCosts;
 import spacesettlers.actions.PurchaseTypes;
 import spacesettlers.graphics.SpacewarGraphics;
@@ -86,17 +87,25 @@ public class GrahClient extends TeamClient {
 		
 		if (model.isEnergyLow(ship))
 		{
-			AbstractObject nearestEnergySource = model.findNearestEnergySource(ship);
-			
-			if (nearestEnergySource != null)
+			AbstractObject nearestEnergySource = model.findNearestBeacon(ship);
+			if (nearestEnergySource.getId() == ((MoveToObjectAction)currentAction).getGoalObject().getId())
+			{
+				System.out.print(".");
+				return currentAction;
+			}
+			else if (nearestEnergySource != null)
 			{
 				System.out.println("Energy");
-				return new MoveAction(space, currentPosition, nearestEnergySource.getPosition());
+				return new MoveToObjectAction(space, currentPosition, nearestEnergySource);
 
 			}
 		}
 		
-		if (currentAction == null || currentAction.isMovementFinished(space)) {			
+		if (currentAction.isMovementFinished(space))
+		{
+			System.out.println("movement finished");
+		}
+		if (currentAction == null || currentAction.isMovementFinished(space)) {
 			AbstractObject nearestAsteroid = model.claimBestAsteroid(ship);
 			if (nearestAsteroid == null)
 			{
@@ -104,7 +113,7 @@ public class GrahClient extends TeamClient {
 				if (nearestBeacon != null)
 				{
 					System.out.println("Beacon");
-					return new MoveAction(space, currentPosition, nearestBeacon.getPosition());
+					return new MoveToObjectAction(space, currentPosition, nearestBeacon);
 				}
 				else
 				{
@@ -115,7 +124,7 @@ public class GrahClient extends TeamClient {
 			else
 			{
 				System.out.println("Asteroid");
-				return new MoveAction(space, currentPosition, nearestAsteroid.getPosition());
+				return new MoveToObjectAction(space, currentPosition, nearestAsteroid);
 			}
 		}
 		
