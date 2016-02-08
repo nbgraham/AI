@@ -1,0 +1,178 @@
+package grah8384;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+import spacesettlers.clients.TeamClient;
+import spacesettlers.objects.Asteroid;
+import spacesettlers.objects.Base;
+import spacesettlers.objects.Beacon;
+import spacesettlers.objects.Ship;
+import spacesettlers.simulator.Toroidal2DPhysics;
+
+public class KnowledgeRepresentation {
+	
+	/**
+	 * The team that this model is for
+	 */
+	TeamClient team;
+	/**
+	 * The space that the team is operating in
+	 */
+	Toroidal2DPhysics space;
+	
+	/**
+	 * Creates a new knowledge representation for the <code>team</code> based on the give <code>space</code>
+	 * 
+	 * @param team
+	 * @param space
+	 */
+	public KnowledgeRepresentation(TeamClient team, Toroidal2DPhysics space)
+	{
+		this.team = team;
+		this.space = space;
+				
+	}
+	
+	/**
+	 * Returns true if the given <code>ship</code> has less than a certain energy
+	 * @param ship
+	 * @return
+	 */
+	public boolean isEnergyLow(Ship ship)
+	{
+		return ship.getEnergy() < 2000;
+	}
+	
+	/**
+	 * Returns true if the given <code>ship</code> has more than a certain amount of resources
+	 * @param ship
+	 * @return
+	 */
+	public boolean isCargoNearFull(Ship ship)
+	{
+		return ship.getResources().getTotal() > 500;
+	}
+	
+	/**
+	 * Returns the base that is nearest to the given <code>ship</code>
+	 * If there is no closest base, returns null
+	 * 
+	 * @param ship
+	 * @return
+	 */
+	public Base findNearestBase(Ship ship)
+	{
+		Set<Base> bases = space.getBases();
+		Base nearestBase = null;
+		
+		double minDistance = Double.MAX_VALUE;
+		double distanceToBase;
+		
+		for ( Base base : bases)
+		{
+			distanceToBase = space.findShortestDistance(ship.getPosition(), base.getPosition());
+			
+			if ( distanceToBase < minDistance )
+			{
+				minDistance = distanceToBase;
+				nearestBase = base;
+			}
+					
+		}
+		
+		return nearestBase;
+	}
+	
+	/**
+	 * Returns the asteroid that is nearest to the given <code>ship</code>
+	 * If there is no closest asteroid, returns null
+	 * 
+	 * @param ship
+	 * @return
+	 */
+	public Asteroid findNearestAsteroid(Ship ship)
+	{
+		Set<Asteroid> asteroids = space.getAsteroids();
+		Asteroid nearestAsteroid = null;
+		
+		double minDistance = Double.MAX_VALUE;
+		double distanceToAsteroid;
+		
+		for ( Asteroid asteroid : asteroids)
+		{
+			distanceToAsteroid = space.findShortestDistance(ship.getPosition(), asteroid.getPosition());
+			
+			if ( distanceToAsteroid < minDistance )
+			{
+				minDistance = distanceToAsteroid;
+				nearestAsteroid = asteroid;
+			}
+					
+		}
+		
+		return nearestAsteroid;
+	}
+	
+	/**
+	 * Returns the beacon that is nearest to the given <code>ship</code>
+	 * If there is no closest beacon, returns null
+	 * 
+	 * @param ship
+	 * @return
+	 */
+	public Beacon findNearestBeacon(Ship ship)
+	{
+		Set<Beacon> beacons = space.getBeacons();
+		Beacon nearestBeacon = null;
+		
+		double minDistance = Double.MAX_VALUE;
+		double distanceToBeacon;
+		
+		for ( Beacon beacon : beacons)
+		{
+			distanceToBeacon = space.findShortestDistance(ship.getPosition(), beacon.getPosition());
+			
+			if ( distanceToBeacon < minDistance )
+			{
+				minDistance = distanceToBeacon;
+				nearestBeacon = beacon;
+			}
+					
+		}
+		
+		return nearestBeacon;
+	}
+	
+	/**
+	 * Returns a list of UUIDs for enemy ships that a within a certain radius of the given <code>ship</code>
+	 * @param ship
+	 * @return
+	 */
+	public Set<UUID> findNearbyEnemiesByID(Ship ship)
+	{
+		Set<UUID> nearbyEnemiesIDs = new HashSet<UUID>();
+		
+		double awarenessRadius = 300;
+		Set<Ship> ships = space.getShips();
+		
+		double distanceToShip;
+		
+		for ( Ship enemyShip : ships)
+		{
+			if (!enemyShip.getTeamName().equalsIgnoreCase(ship.getTeamName()))
+			{
+				distanceToShip = space.findShortestDistance(ship.getPosition(), enemyShip.getPosition());
+				
+				if ( distanceToShip < awarenessRadius )
+				{
+					nearbyEnemiesIDs.add(enemyShip.getId());
+				}
+			}
+					
+		}
+		
+		return nearbyEnemiesIDs;
+	}
+}
