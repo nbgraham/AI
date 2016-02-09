@@ -55,31 +55,7 @@ public class GrahClient extends TeamClient {
 			if (actionable instanceof Ship) {
 				Ship ship = (Ship) actionable;
 
-				// the first time we initialize, decide which ship is the asteroid collector
-				if (asteroidCollectorID == null) {
-					asteroidCollectorID = ship.getId();
-				}
-				
-				AbstractAction action;
-				if (ship.getId().equals(asteroidCollectorID)) {
-					// get the asteroids
-					action = model.getAsteroidCollectorAction(space, ship);
-					if (action instanceof MoveToObjectAction)
-					{
-						Position p = ((MoveToObjectAction) action).getGoalObject().getPosition();
-						graphicsToAdd.add(new StarGraphics(3, super.getTeamColor(), p));
-						
-						LineGraphics line = new LineGraphics(ship.getPosition(), p, 
-								space.findShortestDistanceVector(ship.getPosition(), p));
-						line.setLineColor(super.getTeamColor());
-						graphicsToAdd.add(line);
-					}
-				}
-				else
-				{
-					// this ship will try to shoot other ships so its movements take it towards the nearest other ship not on our team
-					action = model.getWeaponShipAction(space, ship);
-				}
+				AbstractAction action = getAction(ship, space);
 				
 				actions.put(ship.getId(), action);
 				
@@ -90,9 +66,37 @@ public class GrahClient extends TeamClient {
 		} 
 		return actions;
 	}
-	
-	
 
+
+	private AbstractAction getAction(Ship ship, Toroidal2DPhysics space) {
+		// the first time we initialize, decide which ship is the asteroid collector
+		if (asteroidCollectorID == null) {
+			asteroidCollectorID = ship.getId();
+		}
+		
+		AbstractAction action;
+		if (ship.getId().equals(asteroidCollectorID)) {
+			// get the asteroids
+			action = model.getAsteroidCollectorAction(space, ship);
+			if (action instanceof MoveToObjectAction)
+			{
+				Position p = ((MoveToObjectAction) action).getGoalObject().getPosition();
+				graphicsToAdd.add(new StarGraphics(3, super.getTeamColor(), p));
+				
+				LineGraphics line = new LineGraphics(ship.getPosition(), p, 
+						space.findShortestDistanceVector(ship.getPosition(), p));
+				line.setLineColor(super.getTeamColor());
+				graphicsToAdd.add(line);
+			}
+		}
+		else
+		{
+			// this ship will try to shoot other ships so its movements take it towards the nearest other ship not on our team
+			action = model.getWeaponShipAction(space, ship);
+		}
+		
+		return action;
+	}
 
 
 	@Override
