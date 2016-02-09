@@ -1,8 +1,7 @@
 package grah8384;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -10,7 +9,9 @@ import spacesettlers.actions.AbstractAction;
 import spacesettlers.actions.DoNothingAction;
 import spacesettlers.actions.MoveToObjectAction;
 import spacesettlers.clients.TeamClient;
-import spacesettlers.objects.AbstractObject;
+import spacesettlers.graphics.LineGraphics;
+import spacesettlers.graphics.SpacewarGraphics;
+import spacesettlers.graphics.StarGraphics;
 import spacesettlers.objects.Asteroid;
 import spacesettlers.objects.Base;
 import spacesettlers.objects.Beacon;
@@ -28,9 +29,14 @@ public class KnowledgeRepresentation {
 	 * The space that the team is operating in
 	 */
 	Toroidal2DPhysics space;
-	Map<UUID, UUID> asteroidToShip;
+	HashMap <UUID, UUID> asteroidToShip;
 	HashMap <UUID, Boolean> aimingForBase;
 	public HashMap <UUID, Ship> asteroidToShipMap;
+	UUID asteroidCollectorID;
+	public ArrayList<SpacewarGraphics> graphicsToAdd;
+	
+	final int MONEY_COEFFICIENT = 10;
+	final int DISTANCE_COEFFICIENT = -2;
 
 	
 	/**
@@ -46,6 +52,40 @@ public class KnowledgeRepresentation {
 		asteroidToShip = new HashMap<UUID, UUID>();
 		aimingForBase = new HashMap<UUID, Boolean>();
 		asteroidToShipMap = new HashMap<UUID, Ship>();
+		graphicsToAdd = new ArrayList<SpacewarGraphics>();
+		asteroidCollectorID = null;
+	}
+	
+	public AbstractAction getAction(Ship ship, Toroidal2DPhysics space) {
+		// the first time we initialize, decide which ship is the asteroid collector
+		if (asteroidCollectorID == null) {
+			asteroidCollectorID = ship.getId();
+		}
+		
+		AbstractAction action;
+		if (ship.getId().equals(asteroidCollectorID)) {
+			// get the asteroids
+			action = getAsteroidCollectorAction(space, ship);
+			
+			//Draw line for debugging
+			if (action instanceof MoveToObjectAction)
+			{
+				Position p = ((MoveToObjectAction) action).getGoalObject().getPosition();
+				graphicsToAdd.add(new StarGraphics(3, team.getTeamColor(), p));
+				
+				LineGraphics line = new LineGraphics(ship.getPosition(), p, 
+						space.findShortestDistanceVector(ship.getPosition(), p));
+				line.setLineColor(team.getTeamColor());
+				graphicsToAdd.add(line);
+			}
+		}
+		else
+		{
+			// this ship will try to shoot other ships so its movements take it towards the nearest other ship not on our team
+			action = getWeaponShipAction(space, ship);
+		}
+		
+		return action;
 	}
 	
 	/**
@@ -56,7 +96,7 @@ public class KnowledgeRepresentation {
 	 */
 	public AbstractAction getAsteroidCollectorAction(Toroidal2DPhysics space,
 			Ship ship) {
-		AbstractAction current = ship.getCurrentAction();
+		AbstractAction currentAction = ship.getCurrentAction();
 		Position currentPosition = ship.getPosition();
 
 		// aim for a beacon if there isn't enough energy
@@ -83,12 +123,12 @@ public class KnowledgeRepresentation {
 
 		// did we bounce off the base?
 		if (ship.getResources().getTotal() == 0 && ship.getEnergy() > 2000 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
-			current = null;
+			currentAction = null;
 			aimingForBase.put(ship.getId(), false);
 		}
 
 		// otherwise aim for the asteroid
-		if (current == null || current.isMovementFinished(space)) {
+		if (currentAction == null || currentAction.isMovementFinished(space)) {
 			aimingForBase.put(ship.getId(), false);
 			Asteroid asteroid = pickHighestValueFreeAsteroid(space, ship);
 
@@ -233,18 +273,20 @@ public class KnowledgeRepresentation {
 	 */
 	public Asteroid pickHighestValueFreeAsteroid(Toroidal2DPhysics space, Ship ship) {
 		Set<Asteroid> asteroids = space.getAsteroids();
-		int bestMoney = Integer.MIN_VALUE;
+		double bestValue = Double.MIN_VALUE;
+		double value;
 		Asteroid bestAsteroid = null;
 
 		for (Asteroid asteroid : asteroids) {
-			if (!asteroidToShipMap.containsKey(asteroid)) {
-				if (asteroid.isMineable() && asteroid.getResources().getTotal() > bestMoney) {
-					bestMoney = asteroid.getResources().getTotal();
+			if (!asteroidToShipMap.containsKey(asteroid) && asteroid.isMineable()) {
+				value = MONEY_COEFFICIENT*asteroid.getResources().getTotal() + DISTANCE_COEFFICIENT*space.findShortestDistance(ship.getPosition(), asteroid.getPosition());
+				if (value  > bestValue) {
+					bestValue = value;
 					bestAsteroid = asteroid;
 				}
 			}
 		}
-		//System.out.println("Best asteroid has " + bestMoney);
+		System.out.println("Best asteroid has " + bestValue);
 		return bestAsteroid;
 	}
 

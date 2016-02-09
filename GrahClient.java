@@ -10,23 +10,18 @@ import java.util.UUID;
 
 import spacesettlers.actions.AbstractAction;
 import spacesettlers.actions.DoNothingAction;
-import spacesettlers.actions.MoveToObjectAction;
 import spacesettlers.actions.PurchaseCosts;
 import spacesettlers.actions.PurchaseTypes;
 import spacesettlers.clients.TeamClient;
-import spacesettlers.graphics.LineGraphics;
 import spacesettlers.graphics.SpacewarGraphics;
-import spacesettlers.graphics.StarGraphics;
 import spacesettlers.objects.AbstractActionableObject;
 import spacesettlers.objects.AbstractObject;
 import spacesettlers.objects.Asteroid;
 import spacesettlers.objects.Base;
-import spacesettlers.objects.Beacon;
 import spacesettlers.objects.Ship;
 import spacesettlers.objects.powerups.SpaceSettlersPowerupEnum;
 import spacesettlers.objects.resources.ResourcePile;
 import spacesettlers.simulator.Toroidal2DPhysics;
-import spacesettlers.utilities.Position;
 
 /**
  * Collects nearby asteroids and brings them to the base, picks up beacons as needed for energy.
@@ -39,9 +34,18 @@ import spacesettlers.utilities.Position;
 public class GrahClient extends TeamClient {
 	UUID asteroidCollectorID;
 	double weaponsProbability = 1;
-	private ArrayList<SpacewarGraphics> graphicsToAdd;
 	private KnowledgeRepresentation model;
+	
+	@Override
+	public void initialize(Toroidal2DPhysics space) {
+		model = new KnowledgeRepresentation(this, space);
+	}
 
+	@Override
+	public void shutDown(Toroidal2DPhysics space) {
+		// TODO Auto-generated method stub
+
+	}
 
 	/**
 	 * Assigns ships to asteroids and beacons, as described above
@@ -55,7 +59,7 @@ public class GrahClient extends TeamClient {
 			if (actionable instanceof Ship) {
 				Ship ship = (Ship) actionable;
 
-				AbstractAction action = getAction(ship, space);
+				AbstractAction action = model.getAction(ship, space);
 				
 				actions.put(ship.getId(), action);
 				
@@ -65,37 +69,6 @@ public class GrahClient extends TeamClient {
 			}
 		} 
 		return actions;
-	}
-
-
-	private AbstractAction getAction(Ship ship, Toroidal2DPhysics space) {
-		// the first time we initialize, decide which ship is the asteroid collector
-		if (asteroidCollectorID == null) {
-			asteroidCollectorID = ship.getId();
-		}
-		
-		AbstractAction action;
-		if (ship.getId().equals(asteroidCollectorID)) {
-			// get the asteroids
-			action = model.getAsteroidCollectorAction(space, ship);
-			if (action instanceof MoveToObjectAction)
-			{
-				Position p = ((MoveToObjectAction) action).getGoalObject().getPosition();
-				graphicsToAdd.add(new StarGraphics(3, super.getTeamColor(), p));
-				
-				LineGraphics line = new LineGraphics(ship.getPosition(), p, 
-						space.findShortestDistanceVector(ship.getPosition(), p));
-				line.setLineColor(super.getTeamColor());
-				graphicsToAdd.add(line);
-			}
-		}
-		else
-		{
-			// this ship will try to shoot other ships so its movements take it towards the nearest other ship not on our team
-			action = model.getWeaponShipAction(space, ship);
-		}
-		
-		return action;
 	}
 
 
@@ -119,23 +92,10 @@ public class GrahClient extends TeamClient {
 	}
 
 	@Override
-	public void initialize(Toroidal2DPhysics space) {
-		asteroidCollectorID = null;
-		graphicsToAdd = new ArrayList<SpacewarGraphics>();
-		model = new KnowledgeRepresentation(this, space);
-	}
-
-	@Override
-	public void shutDown(Toroidal2DPhysics space) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	public Set<SpacewarGraphics> getGraphics() {
 		HashSet<SpacewarGraphics> graphics = new HashSet<SpacewarGraphics>();
-		graphics.addAll(graphicsToAdd);
-		graphicsToAdd.clear();
+		graphics.addAll(model.graphicsToAdd);
+		model.graphicsToAdd.clear();
 		return graphics;
 	}
 
