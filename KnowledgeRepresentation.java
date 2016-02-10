@@ -86,27 +86,21 @@ public class KnowledgeRepresentation {
 		}
 		
 		AbstractAction action;
-		if (ship.getId().equals(asteroidCollectorID)) {
-			// get the asteroids
-			action = getAsteroidCollectorAction(space, ship);
-			
-			//Draw line for debugging
-			if (action instanceof MoveToObjectAction)
-			{
-				Position p = ((MoveToObjectAction) action).getGoalObject().getPosition();
-				graphicsToAdd.add(new StarGraphics(3, team.getTeamColor(), p));
-				
-				LineGraphics line = new LineGraphics(ship.getPosition(), p, 
-						space.findShortestDistanceVector(ship.getPosition(), p));
-				line.setLineColor(team.getTeamColor());
-				graphicsToAdd.add(line);
-			}
-		}
-		else
+		// get the asteroids
+		action = getAsteroidCollectorAction(space, ship);
+		
+		//Draw line for debugging
+		if (action instanceof MoveToObjectAction)
 		{
-			// this ship will try to shoot other ships so its movements take it towards the nearest other ship not on our team
-			action = getWeaponShipAction(space, ship);
+			Position p = ((MoveToObjectAction) action).getGoalObject().getPosition();
+			graphicsToAdd.add(new StarGraphics(3, team.getTeamColor(), p));
+			
+			LineGraphics line = new LineGraphics(ship.getPosition(), p, 
+					space.findShortestDistanceVector(ship.getPosition(), p));
+			line.setLineColor(team.getTeamColor());
+			graphicsToAdd.add(line);
 		}
+	
 		
 		return action;
 	}
@@ -169,70 +163,6 @@ public class KnowledgeRepresentation {
 			} else {
 				asteroidToShipMap.put(asteroid.getId(), ship);
 				newAction = new MoveToObjectAction(space, currentPosition, asteroid);
-			}
-			return newAction;
-		} else {
-			return ship.getCurrentAction();
-		}
-	}
-
-	/**
-	 * Gets the action for the weapons based ship
-	 * @param space
-	 * @param ship
-	 * @return
-	 */
-	public AbstractAction getWeaponShipAction(Toroidal2DPhysics space,
-			Ship ship) {
-		AbstractAction current = ship.getCurrentAction();
-		Position currentPosition = ship.getPosition();
-
-		// aim for a beacon if there isn't enough energy
-		if (ship.getEnergy() < 2000) {
-			Beacon beacon = pickNearestBeacon(space, ship);
-			AbstractAction newAction = null;
-			// if there is no beacon, then just skip a turn
-			if (beacon == null) {
-				newAction = new DoNothingAction();
-			} else {
-				newAction = new MoveToObjectAction(space, currentPosition, beacon);
-			}
-			aimingForBase.put(ship.getId(), false);
-			return newAction;
-		}
-
-		// if the ship has enough resourcesAvailable, take it back to base
-		if (ship.getResources().getTotal() > 500) {
-			Base base = findNearestBase(space, ship);
-			AbstractAction newAction = new MoveToObjectAction(space, currentPosition, base);
-			aimingForBase.put(ship.getId(), true);
-			return newAction;
-		}
-
-		// did we bounce off the base?
-		if (ship.getResources().getTotal() == 0 && ship.getEnergy() > 2000 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
-			current = null;
-			aimingForBase.put(ship.getId(), false);
-		}
-
-		// otherwise aim for the nearest enemy ship
-		if (current == null || current.isMovementFinished(space)) {
-			aimingForBase.put(ship.getId(), false);
-			Ship enemy = pickNearestEnemyShip(space, ship);
-
-			AbstractAction newAction = null;
-
-			if (enemy == null) {
-				// there is no enemy available so collect a beacon
-				Beacon beacon = pickNearestBeacon(space, ship);
-				// if there is no beacon, then just skip a turn
-				if (beacon == null) {
-					newAction = new DoNothingAction();
-				} else {
-					newAction = new MoveToObjectAction(space, currentPosition, beacon);
-				}
-			} else {
-				newAction = new MoveToObjectAction(space, currentPosition, enemy);
 			}
 			return newAction;
 		} else {
