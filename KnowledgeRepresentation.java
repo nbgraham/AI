@@ -29,13 +29,31 @@ public class KnowledgeRepresentation {
 	 * The space that the team is operating in
 	 */
 	Toroidal2DPhysics space;
-	HashMap <UUID, UUID> asteroidToShip;
-	HashMap <UUID, Boolean> aimingForBase;
-	public HashMap <UUID, Ship> asteroidToShipMap;
-	UUID asteroidCollectorID;
-	public ArrayList<SpacewarGraphics> graphicsToAdd;
 	
+	/**
+	 * Map of whether or not each ship is aiming for the base
+	 */
+	HashMap <UUID, Boolean> aimingForBase;
+	/**
+	 * Maps asteroids to ship so that no two ships of the same team go after the same asteroid
+	 */
+	protected HashMap <UUID, Ship> asteroidToShipMap;
+	/**
+	 * The ID of the ship that is the asteroid collector
+	 */
+	protected UUID asteroidCollectorID;
+	/**
+	 * A list of graphics that need to be added to the GUI
+	 */
+	protected ArrayList<SpacewarGraphics> graphicsToAdd;
+	
+	/**
+	 * The weight of the resources in evaluating asteroids
+	 */
 	final int MONEY_COEFFICIENT = 10;
+	/**
+	 * The weight of the distance in evaluating asteroids (should be negative)
+	 */
 	final int DISTANCE_COEFFICIENT = -2;
 
 	
@@ -49,13 +67,18 @@ public class KnowledgeRepresentation {
 	{
 		this.team = team;
 		this.space = space;
-		asteroidToShip = new HashMap<UUID, UUID>();
 		aimingForBase = new HashMap<UUID, Boolean>();
 		asteroidToShipMap = new HashMap<UUID, Ship>();
 		graphicsToAdd = new ArrayList<SpacewarGraphics>();
 		asteroidCollectorID = null;
 	}
 	
+	/**
+	 * Returns a good action for the specified ship
+	 * @param ship
+	 * @param space
+	 * @return
+	 */
 	public AbstractAction getAction(Ship ship, Toroidal2DPhysics space) {
 		// the first time we initialize, decide which ship is the asteroid collector
 		if (asteroidCollectorID == null) {
