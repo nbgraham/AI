@@ -47,19 +47,16 @@ public class Graph {
 		sampleNodes.add(this.start);
 		sampleNodes.add(this.goal);
 		
-		//sample space <sampleSize> times
-		for(int i=0; i<sampleSize; i+=1){
+		for(int i=0; i<sampleSize; i++){
+			
 			//get a random point
 			Position samplePosition = space.getRandomFreeLocation(seed, Ship.SHIP_RADIUS);
 			//construct a node from the random point
-			Node sampleNode = new Node(samplePosition, space.findShortestDistance(samplePosition, this.goal.getPosition()));
+			Node nodeI = new Node(samplePosition);
 			//append the sample node to the list
-			sampleNodes.add(sampleNode);
-		}
-		
-		for(int i=0; i<sampleSize; i+=1){
-			Node nodeI = sampleNodes.get(i);
-			for(int j=i+1; j<sampleSize; j+=1){
+			sampleNodes.add(nodeI);
+			
+			for(int j=0; j<i; j++){
 				Node nodeJ = sampleNodes.get(j);
 				//if connected
 				if(space.isPathClearOfObstructions(nodeI.getPosition(), nodeJ.getPosition(), obstructions, Ship.SHIP_RADIUS)){
@@ -68,9 +65,8 @@ public class Graph {
 					nodeJ.addNeighbor(nodeI);
 				}
 			}
-			if(nodeI.hasNeighbors()){
-				this.graph.add(nodeI);
-			}
+			
+			this.graph.add(nodeI);
 		}
 	}
 	
