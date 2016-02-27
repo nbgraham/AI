@@ -7,13 +7,11 @@ import java.util.UUID;
 
 import spacesettlers.actions.AbstractAction;
 import spacesettlers.actions.DoNothingAction;
-import spacesettlers.actions.MoveAction;
 import spacesettlers.actions.MoveToObjectAction;
 import spacesettlers.clients.TeamClient;
 import spacesettlers.graphics.LineGraphics;
 import spacesettlers.graphics.SpacewarGraphics;
 import spacesettlers.graphics.StarGraphics;
-import spacesettlers.objects.AbstractObject;
 import spacesettlers.objects.Asteroid;
 import spacesettlers.objects.Base;
 import spacesettlers.objects.Beacon;
@@ -107,7 +105,6 @@ public class KnowledgeRepresentation {
 		return action;
 	}
 	
-	
 	/**
 	 * Gets the action for the asteroid collecting ship
 	 * @param space
@@ -127,7 +124,7 @@ public class KnowledgeRepresentation {
 			if (beacon == null) {
 				newAction = new DoNothingAction();
 			} else {
-				newAction = fastAction(ship, beacon, 1);
+				newAction = new MoveToObjectAction(space, currentPosition, beacon);
 			}
 			aimingForBase.put(ship.getId(), false);
 			return newAction;
@@ -136,7 +133,7 @@ public class KnowledgeRepresentation {
 		// if the ship has enough resourcesAvailable, take it back to base
 		if (ship.getResources().getTotal() > 500) {
 			Base base = findNearestBase(space, ship);
-			AbstractAction newAction = fastAction(ship, base, 1);
+			AbstractAction newAction = new MoveToObjectAction(space, currentPosition, base);
 			aimingForBase.put(ship.getId(), true);
 			return newAction;
 		}
@@ -161,11 +158,11 @@ public class KnowledgeRepresentation {
 				if (beacon == null) {
 					newAction = new DoNothingAction();
 				} else {
-					newAction = fastAction(ship,asteroid, 1);//new MoveToObjectAction(space, currentPosition, beacon);
+					newAction = new MoveToObjectAction(space, currentPosition, beacon);
 				}
 			} else {
 				asteroidToShipMap.put(asteroid.getId(), ship);
-				newAction = fastAction(ship, asteroid, 1);
+				newAction = new MoveToObjectAction(space, currentPosition, asteroid);
 			}
 			return newAction;
 		} else {
@@ -174,11 +171,6 @@ public class KnowledgeRepresentation {
 	}
 
 
-	public AbstractAction fastAction(Ship ship, AbstractObject goal, double percent)
-	{
-		return new MoveAction(space, ship.getPosition(), goal.getPosition(), space.findShortestDistanceVector(ship.getPosition(), goal.getPosition()).getUnitVector().multiply(Toroidal2DPhysics.MAX_TRANSLATIONAL_VELOCITY).multiply(percent));
-	}
-	
 	/**
 	 * Find the nearest ship on another team and aim for it
 	 * @param space
@@ -247,7 +239,7 @@ public class KnowledgeRepresentation {
 				}
 			}
 		}
-		//System.out.println("Best asteroid has " + bestValue);
+		System.out.println("Best asteroid has " + bestValue);
 		return bestAsteroid;
 	}
 

@@ -1,0 +1,38 @@
+#!/usr/bin/expect -f
+
+set project [lindex $argv 0]
+set config [lindex $argv 1]
+set files [lindex $argv 2:end]
+
+set timeout -1
+set passwd "Snowball0Guitar"
+
+send -- "echo $files"
+# send files to gpel
+spawn scp $files grah8384@gpel9.cs.ou.edu:~
+expect -exact "grah8384@gpel9.cs.ou.edu's password: "
+send -- "$passwd\r"
+
+# ssh to gpel
+expect "$ "
+spawn ssh -o PubkeyAuthentication=no grah8384@gpel9.cs.ou.edu
+expect -exact "grah8384@gpel9.cs.ou.edu's password: "
+send -- "$passwd\r"
+
+# send files to spacewar
+expect "*?$ "
+send --  "scp $files spacewar.cs.ou.edu:~\r"
+
+# ssh to spacewar
+expect "*?$ "
+send -- "ssh spacewar.cs.ou.edu\r"
+
+#check that files transfered
+expect "*?$ "
+send -- "ls $files\r"
+
+#submit
+expect "*?$ "
+send -- "/spacewar/bin/submit --config_file $config --project $project --java_files $files"
+
+expect "*?$ "
