@@ -2,6 +2,7 @@ package grah8384;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.UUID;
 
@@ -50,6 +51,17 @@ public class KnowledgeRepresentation {
 	protected ArrayList<SpacewarGraphics> graphicsToAdd;
 	
 	/**
+	 * List of planned out actions
+	 * Linked list because we only really need to add to the end and access the head
+	 */
+	protected LinkedList<AbstractAction> plannedActions;
+	
+	/**
+	 * Counter to re-plan every ten time steps
+	 */
+	protected int timeSteps = 0;
+	
+	/**
 	 * The weight of the resources in evaluating asteroids
 	 */
 	final int MONEY_COEFFICIENT = 10;
@@ -72,6 +84,7 @@ public class KnowledgeRepresentation {
 		aimingForBase = new HashMap<UUID, Boolean>();
 		asteroidToShipMap = new HashMap<UUID, Ship>();
 		graphicsToAdd = new ArrayList<SpacewarGraphics>();
+		plannedActions = new LinkedList<AbstractAction>();
 		asteroidCollectorID = null;
 	}
 	
@@ -102,7 +115,6 @@ public class KnowledgeRepresentation {
 			line.setLineColor(team.getTeamColor());
 			graphicsToAdd.add(line);
 		}
-	
 		
 		return action;
 	}
