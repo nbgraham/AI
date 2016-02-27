@@ -76,8 +76,7 @@ public class Graph {
 		
 		Node currentNode;
 		while(!q.isEmpty()){
-			currentNode = q.peek();
-			q.remove();
+			currentNode = q.poll();
 			
 			for (Node n : currentNode.neighbors){
 				n.setHeuristic(space.findShortestDistance(start.position, n.position));

@@ -1,8 +1,10 @@
 package grah8384;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
@@ -21,6 +23,8 @@ import spacesettlers.objects.Beacon;
 import spacesettlers.objects.Ship;
 import spacesettlers.simulator.Toroidal2DPhysics;
 import spacesettlers.utilities.Position;
+
+import grah8384.Graph;
 
 public class KnowledgeRepresentation {
 	
@@ -104,18 +108,6 @@ public class KnowledgeRepresentation {
 		// get the asteroids
 		action = getAsteroidCollectorAction(space, ship);
 		
-		//Draw line for debugging
-		if (action instanceof MoveToObjectAction)
-		{
-			Position p = ((MoveToObjectAction) action).getGoalObject().getPosition();
-			graphicsToAdd.add(new StarGraphics(3, team.getTeamColor(), p));
-			
-			LineGraphics line = new LineGraphics(ship.getPosition(), p, 
-					space.findShortestDistanceVector(ship.getPosition(), p));
-			line.setLineColor(team.getTeamColor());
-			graphicsToAdd.add(line);
-		}
-		
 		return action;
 	}
 	
@@ -129,7 +121,6 @@ public class KnowledgeRepresentation {
 	public AbstractAction getAsteroidCollectorAction(Toroidal2DPhysics space,
 			Ship ship) {
 		AbstractAction currentAction = ship.getCurrentAction();
-		Position currentPosition = ship.getPosition();
 
 		// aim for a beacon if there isn't enough energy
 		if (ship.getEnergy() < 2000) {
@@ -173,11 +164,25 @@ public class KnowledgeRepresentation {
 				if (beacon == null) {
 					newAction = new DoNothingAction();
 				} else {
-					newAction = fastAction(ship,asteroid, 1);//new MoveToObjectAction(space, currentPosition, beacon);
+					newAction = fastAction(ship,asteroid, 1);
 				}
 			} else {
 				asteroidToShipMap.put(asteroid.getId(), ship);
 				newAction = fastAction(ship, asteroid, 1);
+				
+				boolean once = true;
+				if (once)
+				{
+					Graph g = new Graph(space, ship.getPosition(), asteroid.getPosition(), 50);
+					LinkedList<Node> path = g.getPath();
+					
+					for(Node n : path){
+						System.out.println("X: "+n.getPosition().getX()+" Y: "+n.getPosition().getY()+" Neighbors: "+n.getNeighbors().size());
+					}
+					
+					once = false;
+				}
+				
 			}
 			return newAction;
 		} else {
