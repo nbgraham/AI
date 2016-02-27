@@ -79,7 +79,8 @@ public class Graph {
 		return null;
 	}
 	
-	private int getCost(Node initialNode, Node finalNode) {
+	private int getCost(Node initialNode, Node finalNode)
+	{
 		double angularAccel =  Math.abs((new MoveAction()).pdControlOrientToGoal(space, finalNode.getPosition(),initialNode.getPosition(), 0)); 
 		double angularInertia = (3.0 * Ship.SHIP_MASS * Ship.SHIP_RADIUS * angularAccel) / 2.0;
 		int penalty = (int) Math.floor(Toroidal2DPhysics.ENERGY_PENALTY * angularInertia);

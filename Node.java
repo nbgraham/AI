@@ -6,15 +6,17 @@ import java.util.Set;
 
 import spacesettlers.utilities.Position;
 
-public class Node {
+public class Node implements Comparable<Node> {
 	Set<Node> neighbors;
 	double heuristic;
+	int bestPathCost;
 	Position position;
 	
 	public Node(Position pointLocation, double distToGoal){
 		this.neighbors = new HashSet<Node>();
 		this.heuristic = distToGoal;
 		this.position = pointLocation;
+		this.bestPathCost = Integer.MAX_VALUE;
 	}
 	
 	public boolean addNeighbor(Node n){
@@ -26,7 +28,7 @@ public class Node {
 	}
 	
 	public boolean hasNeighbors(){
-		return this.neighbors.size()>0;
+		return this.neighbors.size() > 0;
 	}
 	
 	public Set<Node> getNeighbors(){
@@ -41,6 +43,17 @@ public class Node {
 		return this.position;
 	}
 	
+	public int getBestPathCost(){
+		return this.bestPathCost;
+	}
 	
+	public void setPathCost(int pathCost){
+		this.bestPathCost = pathCost;
+	}
+
+	@Override
+	public int compareTo(Node other) {
+		return Integer.compare((int) (heuristic + bestPathCost), (int) (other.heuristic + other.bestPathCost));
+	}
 
 }
