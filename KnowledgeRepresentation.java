@@ -108,6 +108,7 @@ public class KnowledgeRepresentation {
 			asteroidCollectorID = ship.getId();
 		}
 		
+		
 		//Draw planned path
 		if (graph != null)
 		{
@@ -127,6 +128,7 @@ public class KnowledgeRepresentation {
 				p = n;
 			}
 		}
+		
 		
 		if (ship.getCurrentAction() == null || ship.getCurrentAction().isMovementFinished(space))
 		{
@@ -177,6 +179,8 @@ public class KnowledgeRepresentation {
 			
 			if (plannedPoints.isEmpty()) return new DoNothingAction();
 			
+			if (plannedPoints.size() == 1) 	return new BetterMovement(space, ship.getPosition(), plannedPoints.removeFirst().position, Base.BASE_RADIUS);
+
 			return new BetterMovement(space, ship.getPosition(), plannedPoints.removeFirst().position);
 		}
 		else

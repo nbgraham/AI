@@ -99,8 +99,8 @@ public class Graph {
 				if (!visited.contains(n))
 				{
 					n.setHeuristic(space.findShortestDistance(n.position, goal.position));
-					n.setPathCost(currentNode.bestPathCost + getCost(currentNode,n));
-					n.setParent(currentNode);
+					//If the path cost is better, then set the parent (change the path to a better path)
+					if (n.setPathCost(currentNode.bestPathCost + getCost(currentNode,n))) n.setParent(currentNode);
 					if (n.position.equals(goal.position)) {
 						System.out.println("Goal found");
 						goal.setParent(currentNode);

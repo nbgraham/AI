@@ -77,8 +77,13 @@ public class Node implements Comparable<Node> {
 		return this.bestPathCost;
 	}
 	
-	public void setPathCost(int pathCost){
-		if (pathCost < this.bestPathCost) this.bestPathCost = pathCost;
+	public boolean setPathCost(int pathCost){
+		if (pathCost < this.bestPathCost) 
+		{
+			this.bestPathCost = pathCost;
+			return true;
+		}
+		return false;
 	}
 
 	@Override

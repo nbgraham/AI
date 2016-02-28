@@ -8,12 +8,24 @@ import spacesettlers.utilities.Position;
 import spacesettlers.utilities.Vector2D;
 
 public class BetterMovement extends MoveAction{
-	
+	double targetReachedAccel =  MoveAction.TARGET_REACHED_ERROR;;
+	double targetErrorRadius;
+
 	public BetterMovement(
 			Toroidal2DPhysics space, 
 			Position currentLocation, 
 			Position targetLocation){
 		super(space, currentLocation, targetLocation);
+		targetErrorRadius = MoveAction.TARGET_REACHED_ERROR;
+	}
+	
+	public BetterMovement(
+			Toroidal2DPhysics space, 
+			Position currentLocation, 
+			Position targetLocation,
+			double targetErrorRadius){
+		super(space, currentLocation, targetLocation);
+		this.targetErrorRadius = targetErrorRadius;
 	}
 
 	/**
@@ -64,8 +76,8 @@ public class BetterMovement extends MoveAction{
 		movement.setTranslationalAcceleration(goalAccel);
 
 		// figure out if it has reached the goal
-		if ((goalAccel.getMagnitude() < 1) ||
-				(space.findShortestDistance(targetLocation, ship.getPosition()) < 50)) {
+		if ((goalAccel.getMagnitude() < targetReachedAccel) ||
+				(space.findShortestDistance(targetLocation, ship.getPosition()) < targetErrorRadius)) {
 			isFinished = true;
 		}
 
