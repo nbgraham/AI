@@ -20,14 +20,18 @@ public class Graph {
 	HashSet<Node> graph;
 	Node start;
 	Node goal;
+	Ship ship;
+	AbstractObject goalObject;
 	
 	Toroidal2DPhysics space;
 	
-	public Graph(Toroidal2DPhysics space, Position start, Position goal, int sampleSize){
+	public Graph(Toroidal2DPhysics space, Ship ship, AbstractObject goal, int sampleSize){
 		this.graph = new HashSet<Node>();
-		this.start = new Node(start, space.findShortestDistance(start, goal), 0);
-		this.goal = new Node(goal, 0);
+		this.start = new Node(ship.getPosition(), space.findShortestDistance(ship.getPosition(), goal.getPosition()), 0);
+		this.goal = new Node(goal.getPosition(), 0);
 		this.space = space;
+		this.ship = ship;
+		this.goalObject = goal;
 		
 		buildGraph(sampleSize);
 	}
@@ -36,9 +40,13 @@ public class Graph {
 		//set of avoided objects
 		Set<AbstractObject> obstructions = new HashSet<AbstractObject>();
 		//add objects as obstructions
-		obstructions.addAll(Methods.getNonMineableAsteroids(space));
+		obstructions.addAll(space.getAsteroids());
 		obstructions.addAll(space.getBases());
 		obstructions.addAll(space.getShips());
+		
+		System.out.println("Ship removed: " + obstructions.remove(ship));
+		System.out.println("Goal removed: " + obstructions.remove(goalObject));
+
 		//random seed for point generation
 		Random seed = new Random(System.currentTimeMillis());
 		//list of sampled nodes
@@ -56,6 +64,7 @@ public class Graph {
 			sampleNodes.add(nodeI);
 			
 			for(int j=0; j < sampleNodes.size(); j++){
+				if ( i == j) continue;
 				Node nodeJ = sampleNodes.get(j);
 				//if connected
 				if(space.isPathClearOfObstructions(nodeI.getPosition(), nodeJ.getPosition(), obstructions, Ship.SHIP_RADIUS)){
@@ -75,10 +84,17 @@ public class Graph {
 		q.add(this.start);
 		visited.add(this.start);
 		
+		int count = 0;
+		System.out.println("Start neighbors: " + start.neighbors.size());
+		System.out.println("Goal neighbors: " + goal.neighbors.size());
+
 		Node currentNode;
 		while(!q.isEmpty()){
-			currentNode = q.poll();
+			count++;
 			
+			currentNode = q.poll();
+			visited.add(currentNode);
+
 			for (Node n : currentNode.neighbors){
 				if (!visited.contains(n))
 				{
@@ -86,22 +102,23 @@ public class Graph {
 					n.setPathCost(currentNode.bestPathCost + getCost(currentNode,n));
 					n.setParent(currentNode);
 					if (n.position.equals(goal.position)) {
+						System.out.println("Goal found");
 						goal.setParent(currentNode);
 						q.clear();
 						break;
 					}
 					q.add(n);
-					visited.add(n);
 				}
 			}
 		}
 		
+		System.out.println("Max depth: " + count);
 		LinkedList<Node> result = new LinkedList<Node>();
 		currentNode = goal;
-		result.addFirst(currentNode);
+		if (currentNode.parent == null) return null; //Failure
 		while(currentNode.parent != null)
 		{
-			result.addFirst(currentNode.parent);
+			result.addFirst(currentNode);
 			currentNode = currentNode.parent;
 		}
 		
@@ -110,12 +127,7 @@ public class Graph {
 	
 	private int getCost(Node initialNode, Node finalNode)
 	{
-		double angularAccel = ((new MoveAction()).pdControlMoveToGoal(space, finalNode.getPosition(),initialNode.getPosition(), new Vector2D(0,0))).getMagnitude(); 
-		double angularInertia = (3.0 * Ship.SHIP_MASS * Ship.SHIP_RADIUS * angularAccel) / 2.0;
-		int penalty = (int) Math.floor(Toroidal2DPhysics.ENERGY_PENALTY * angularInertia);
-		
-		
-		return penalty;
+		return (int) space.findShortestDistance(initialNode.position, finalNode.position);
 	}
 	
 	public void print(){

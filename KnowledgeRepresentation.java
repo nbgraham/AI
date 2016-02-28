@@ -57,12 +57,12 @@ public class KnowledgeRepresentation {
 	 * List of planned out actions
 	 * Linked list because we only really need to add to the end and access the head
 	 */
-	protected LinkedList<AbstractAction> plannedActions;
+	protected LinkedList<Node> plannedPoints;
 	
 	/**
 	 * Counter to re-plan every ten time steps
 	 */
-	protected int timeSteps = 0;
+	protected int timeSteps = 10;
 	
 	/**
 	 * The weight of the resources in evaluating asteroids
@@ -87,7 +87,7 @@ public class KnowledgeRepresentation {
 		aimingForBase = new HashMap<UUID, Boolean>();
 		asteroidToShipMap = new HashMap<UUID, Ship>();
 		graphicsToAdd = new ArrayList<SpacewarGraphics>();
-		plannedActions = new LinkedList<AbstractAction>();
+		plannedPoints = new LinkedList<Node>();
 		asteroidCollectorID = null;
 	}
 	
@@ -105,11 +105,75 @@ public class KnowledgeRepresentation {
 			asteroidCollectorID = ship.getId();
 		}
 		
-		AbstractAction action;
-		// get the asteroids
-		action = getAsteroidCollectorAction(space, ship);
+		//Draw planned path
+		Node p = null;
 		
-		return action;
+		if(plannedPoints != null)
+		{
+			for (Node n : plannedPoints)
+			{
+				if (p != null)
+				{
+					graphicsToAdd.add(new LineGraphics(p.position, n.position, space.findShortestDistanceVector(p.position, n.position)));
+				}
+				p = n;
+			}
+		}
+		
+		if (ship.getCurrentAction() == null || ship.getCurrentAction().isMovementFinished(space))
+		{
+			if (timeSteps >= 10)
+			{
+				timeSteps = 0;
+				AbstractAction action;
+				// get the asteroids
+				action = getAsteroidCollectorAction(space, ship);
+				if (action instanceof BetterObjectMovement)
+				{		
+					AbstractObject goal = ((BetterObjectMovement) action).getGoalObject();
+					Graph g = new Graph(space, ship, goal, 100);
+					System.out.println("Generated graph");
+					
+					/*
+					//Draw graph
+					for(Node n : g.graph)
+					{
+						graphicsToAdd.add(new StarGraphics(2, team.getTeamColor(), n.position));
+						for (Node j : n.neighbors)
+						{
+							graphicsToAdd.add(new LineGraphics(n.position, j.position, space.findShortestDistanceVector(n.position, j.position)));
+						}
+					}
+					System.out.println("Current postion: X: " + ship.getPosition().getX() + " Y: " + ship.getPosition().getY());
+					System.out.println("Goal postion: X: " + goal.getPosition().getX() + " Y: " + goal.getPosition().getY());
+					*/
+					
+					graphicsToAdd.add(new StarGraphics(3, new Color(255,0,0), g.goal.position));
+					graphicsToAdd.add(new StarGraphics(3, new Color(0,255,0), g.start.position));
+					
+					plannedPoints = g.getPath();
+					
+					if (plannedPoints != null)
+					{
+						return new BetterMovement(space, ship.getPosition(), plannedPoints.removeFirst().position);
+					}
+					else
+					{
+						System.out.println("No path found");
+					}	
+				}
+				
+				return action;
+			}
+			
+			if (plannedPoints.isEmpty()) return new DoNothingAction();
+			
+			return new BetterMovement(space, ship.getPosition(), plannedPoints.removeFirst().position);
+		}
+		else
+		{
+			return ship.getCurrentAction();
+		}
 	}
 	
 	
@@ -131,7 +195,7 @@ public class KnowledgeRepresentation {
 			if (beacon == null) {
 				newAction = new DoNothingAction();
 			} else {
-				newAction = fastAction(ship, beacon, 1);
+				newAction = new BetterObjectMovement(space, ship.getPosition(), beacon);
 			}
 			aimingForBase.put(ship.getId(), false);
 			return newAction;
@@ -140,7 +204,7 @@ public class KnowledgeRepresentation {
 		// if the ship has enough resourcesAvailable, take it back to base
 		if (ship.getResources().getTotal() > 500) {
 			Base base = findNearestBase(space, ship);
-			AbstractAction newAction = fastAction(ship, base, 1);
+			AbstractAction newAction = new BetterObjectMovement(space, ship.getPosition(), base);
 			aimingForBase.put(ship.getId(), true);
 			return newAction;
 		}
@@ -169,22 +233,7 @@ public class KnowledgeRepresentation {
 				}
 			} else {
 				asteroidToShipMap.put(asteroid.getId(), ship);
-				newAction = fastAction(ship, asteroid, 1);
-				
-
-				Graph g = new Graph(space, ship.getPosition(), asteroid.getPosition(), 50);
-				System.out.println("Generated graph");
-				
-				System.out.println("Current postion: X: " + ship.getPosition().getX() + " Y: " + ship.getPosition().getY());
-				System.out.println("Goal postion: X: " + asteroid.getPosition().getX() + " Y: " + asteroid.getPosition().getY());
-
-				
-				LinkedList<Node> path = g.getPath();
-				
-				
-				for(Node n : path){
-					System.out.println("X: "+n.getPosition().getX()+" Y: "+n.getPosition().getY()+" Neighbors: "+n.getNeighbors().size());
-				}
+				newAction = new BetterObjectMovement(space, ship.getPosition(), asteroid);
 			}
 			return newAction;
 		} else {
