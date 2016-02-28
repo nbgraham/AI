@@ -40,7 +40,7 @@ public class Graph {
 		//set of avoided objects
 		Set<AbstractObject> obstructions = new HashSet<AbstractObject>();
 		//add objects as obstructions
-		obstructions.addAll(space.getAsteroids());
+		obstructions.addAll(Methods.getNonMineableAsteroids(space));
 		obstructions.addAll(space.getBases());
 		obstructions.addAll(space.getShips());
 		
@@ -127,7 +127,8 @@ public class Graph {
 	
 	private int getCost(Node initialNode, Node finalNode)
 	{
-		return (int) space.findShortestDistance(initialNode.position, finalNode.position);
+		return 200;
+		//return (int) space.findShortestDistance(initialNode.position, finalNode.position)*2;
 	}
 	
 	public void print(){

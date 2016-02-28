@@ -65,7 +65,7 @@ public class BetterMovement extends MoveAction{
 
 		// figure out if it has reached the goal
 		if ((goalAccel.getMagnitude() < 1) ||
-				(space.findShortestDistance(targetLocation, ship.getPosition()) < TARGET_REACHED_ERROR)) {
+				(space.findShortestDistance(targetLocation, ship.getPosition()) < 50)) {
 			isFinished = true;
 		}
 

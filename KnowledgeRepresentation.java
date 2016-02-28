@@ -62,7 +62,7 @@ public class KnowledgeRepresentation {
 	/**
 	 * Counter to re-plan every ten time steps
 	 */
-	protected int timeSteps = 10;
+	protected int timeSteps = 20;
 	
 	/**
 	 * The weight of the resources in evaluating asteroids
@@ -72,7 +72,10 @@ public class KnowledgeRepresentation {
 	 * The weight of the distance in evaluating asteroids (should be negative)
 	 */
 	final int DISTANCE_COEFFICIENT = -2;
-
+	
+	Graph graph = null;
+	
+	protected LinkedList<Node> plannedPath;
 	
 	/**
 	 * Creates a new knowledge representation for the <code>team</code> based on the give <code>space</code>
@@ -106,11 +109,16 @@ public class KnowledgeRepresentation {
 		}
 		
 		//Draw planned path
-		Node p = null;
-		
-		if(plannedPoints != null)
+		if (graph != null)
 		{
-			for (Node n : plannedPoints)
+			graphicsToAdd.add(new StarGraphics(3, new Color(255,0,0), graph.goal.position));
+			graphicsToAdd.add(new StarGraphics(3, new Color(0,255,0), graph.start.position));
+		}
+
+		if(plannedPath != null)
+		{
+			Node p = null;
+			for (Node n : plannedPath)
 			{
 				if (p != null)
 				{
@@ -131,7 +139,7 @@ public class KnowledgeRepresentation {
 				if (action instanceof BetterObjectMovement)
 				{		
 					AbstractObject goal = ((BetterObjectMovement) action).getGoalObject();
-					Graph g = new Graph(space, ship, goal, 100);
+					this.graph = new Graph(space, ship, goal, 400);
 					System.out.println("Generated graph");
 					
 					/*
@@ -148,13 +156,14 @@ public class KnowledgeRepresentation {
 					System.out.println("Goal postion: X: " + goal.getPosition().getX() + " Y: " + goal.getPosition().getY());
 					*/
 					
-					graphicsToAdd.add(new StarGraphics(3, new Color(255,0,0), g.goal.position));
-					graphicsToAdd.add(new StarGraphics(3, new Color(0,255,0), g.start.position));
 					
-					plannedPoints = g.getPath();
+					
+					plannedPoints = graph.getPath();
+					plannedPath = (LinkedList<Node>) plannedPoints.clone();
 					
 					if (plannedPoints != null)
 					{
+						System.out.println("Number of steps: " + plannedPoints.size());
 						return new BetterMovement(space, ship.getPosition(), plannedPoints.removeFirst().position);
 					}
 					else
