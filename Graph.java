@@ -27,15 +27,16 @@ public class Graph {
 	
 	public Graph(Toroidal2DPhysics space, Ship ship, AbstractObject goal, int sampleSize){
 		this.graph = new HashSet<Node>();
-		this.start = new Node(ship.getPosition(), space.findShortestDistance(ship.getPosition(), goal.getPosition()), 0);
-		this.goal = new Node(goal.getPosition(), 0);
 		this.space = space;
 		this.ship = ship;
 		this.goalObject = goal;
 		
+		this.goal = new GoalNode(goal, space.findShortestDistance(ship.getPosition(), goal.getPosition()));
+		this.start = new Node(ship.getPosition(), space.findShortestDistance(ship.getPosition(), this.goal.getPosition()), 0);
+	
 		buildGraph(sampleSize);
 	}
-	
+
 	private void buildGraph(int sampleSize){
 		//set of avoided objects
 		Set<AbstractObject> obstructions = new HashSet<AbstractObject>();
@@ -44,8 +45,8 @@ public class Graph {
 		obstructions.addAll(space.getBases());
 		obstructions.addAll(space.getShips());
 		
-		System.out.println("Ship removed: " + obstructions.remove(ship));
-		System.out.println("Goal removed: " + obstructions.remove(goalObject));
+		obstructions.remove(ship);
+		obstructions.remove(goalObject);
 
 		//random seed for point generation
 		Random seed = new Random(System.currentTimeMillis());

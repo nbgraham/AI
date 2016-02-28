@@ -177,11 +177,29 @@ public class KnowledgeRepresentation {
 				return action;
 			}
 			
+			// did we bounce off the base?
+			if (ship.getResources().getTotal() == 0 && ship.getEnergy() > 2000 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
+				ship.setCurrentAction(null);
+				aimingForBase.put(ship.getId(), false);
+			}
+			
 			if (plannedPoints.isEmpty()) return new DoNothingAction();
 			
-			if (plannedPoints.size() == 1) 	return new BetterMovement(space, ship.getPosition(), plannedPoints.removeFirst().position, Base.BASE_RADIUS);
+			Node nextNode = plannedPoints.removeFirst();
 
-			return new BetterMovement(space, ship.getPosition(), plannedPoints.removeFirst().position);
+			if (plannedPoints.isEmpty())
+			{
+				if (nextNode instanceof GoalNode)
+				{
+					return new BetterMovement(space, ship.getPosition(), nextNode.position, Ship.SHIP_RADIUS + ((GoalNode)nextNode).getGoalRadius());
+				}
+				else
+				{
+					System.err.println("Last node in path was not a goal");
+				}
+			}
+			
+			return new BetterMovement(space, ship.getPosition(), nextNode.position);
 		}
 		else
 		{

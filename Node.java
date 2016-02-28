@@ -3,7 +3,7 @@ package grah8384;
 import java.util.HashSet;
 import java.util.Set;
 
-
+import spacesettlers.objects.AbstractObject;
 import spacesettlers.utilities.Position;
 
 public class Node implements Comparable<Node> {
