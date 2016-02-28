@@ -15,7 +15,6 @@ import spacesettlers.simulator.Toroidal2DPhysics;
 import spacesettlers.utilities.Position;
 import spacesettlers.utilities.Vector2D;
 
-
 public class Graph {
 
 	HashSet<Node> graph;
@@ -71,30 +70,39 @@ public class Graph {
 	}
 	
 	public LinkedList<Node> getPath(){
+		HashSet<Node> visited = new HashSet<Node>();
 		PriorityQueue<Node> q = new PriorityQueue<Node>();
 		q.add(this.start);
+		visited.add(this.start);
 		
 		Node currentNode;
 		while(!q.isEmpty()){
 			currentNode = q.poll();
 			
 			for (Node n : currentNode.neighbors){
-				n.setHeuristic(space.findShortestDistance(start.position, n.position));
-				n.setPathCost(currentNode.bestPathCost + getCost(currentNode,n));
-				n.setParent(currentNode);
-				if (n.position == goal.position) {
-					goal.setParent(currentNode);
-					break;
+				if (!visited.contains(n))
+				{
+					n.setHeuristic(space.findShortestDistance(n.position, goal.position));
+					n.setPathCost(currentNode.bestPathCost + getCost(currentNode,n));
+					n.setParent(currentNode);
+					if (n.position.equals(goal.position)) {
+						goal.setParent(currentNode);
+						q.clear();
+						break;
+					}
+					q.add(n);
+					visited.add(n);
 				}
-				q.add(n);
 			}
 		}
 		
 		LinkedList<Node> result = new LinkedList<Node>();
 		currentNode = goal;
+		result.addFirst(currentNode);
 		while(currentNode.parent != null)
 		{
 			result.addFirst(currentNode.parent);
+			currentNode = currentNode.parent;
 		}
 		
 		return result;

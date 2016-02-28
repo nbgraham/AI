@@ -27,7 +27,6 @@ import spacesettlers.utilities.Position;
 import grah8384.Graph;
 
 public class KnowledgeRepresentation {
-	
 	/**
 	 * The team that this model is for
 	 */
@@ -99,6 +98,8 @@ public class KnowledgeRepresentation {
 	 * @return
 	 */
 	public AbstractAction getAction(Ship ship, Toroidal2DPhysics space) {
+		timeSteps++;
+		
 		// the first time we initialize, decide which ship is the asteroid collector
 		if (asteroidCollectorID == null) {
 			asteroidCollectorID = ship.getId();
@@ -170,19 +171,20 @@ public class KnowledgeRepresentation {
 				asteroidToShipMap.put(asteroid.getId(), ship);
 				newAction = fastAction(ship, asteroid, 1);
 				
-				boolean once = true;
-				if (once)
-				{
-					Graph g = new Graph(space, ship.getPosition(), asteroid.getPosition(), 50);
-					LinkedList<Node> path = g.getPath();
-					
-					for(Node n : path){
-						System.out.println("X: "+n.getPosition().getX()+" Y: "+n.getPosition().getY()+" Neighbors: "+n.getNeighbors().size());
-					}
-					
-					once = false;
-				}
+
+				Graph g = new Graph(space, ship.getPosition(), asteroid.getPosition(), 50);
+				System.out.println("Generated graph");
 				
+				System.out.println("Current postion: X: " + ship.getPosition().getX() + " Y: " + ship.getPosition().getY());
+				System.out.println("Goal postion: X: " + asteroid.getPosition().getX() + " Y: " + asteroid.getPosition().getY());
+
+				
+				LinkedList<Node> path = g.getPath();
+				
+				
+				for(Node n : path){
+					System.out.println("X: "+n.getPosition().getX()+" Y: "+n.getPosition().getY()+" Neighbors: "+n.getNeighbors().size());
+				}
 			}
 			return newAction;
 		} else {
