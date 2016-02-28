@@ -77,6 +77,8 @@ public class KnowledgeRepresentation {
 	
 	protected LinkedList<Node> plannedPath;
 	
+	protected GoalNode goalNode = null;
+	
 	/**
 	 * Creates a new knowledge representation for the <code>team</code> based on the give <code>space</code>
 	 * 
@@ -130,6 +132,12 @@ public class KnowledgeRepresentation {
 		}
 		
 		
+		if (goalNode != null && goalNode.isGone()) {
+			System.out.println("Goal gone, replan");
+			plannedPoints.clear();
+			return null;
+		}
+		
 		if (ship.getCurrentAction() == null || ship.getCurrentAction().isMovementFinished(space))
 		{
 			if (timeSteps >= 10)
@@ -141,8 +149,7 @@ public class KnowledgeRepresentation {
 				if (action instanceof BetterObjectMovement)
 				{		
 					AbstractObject goal = ((BetterObjectMovement) action).getGoalObject();
-					this.graph = new Graph(space, ship, goal, 400);
-					System.out.println("Generated graph");
+					this.graph = new Graph(space, ship, goal, 200);
 					
 					/*
 					//Draw graph
@@ -158,15 +165,17 @@ public class KnowledgeRepresentation {
 					System.out.println("Goal postion: X: " + goal.getPosition().getX() + " Y: " + goal.getPosition().getY());
 					*/
 					
-					
-					
 					plannedPoints = graph.getPath();
-					plannedPath = (LinkedList<Node>) plannedPoints.clone();
-					
+
 					if (plannedPoints != null)
 					{
-						System.out.println("Number of steps: " + plannedPoints.size());
-						return new BetterMovement(space, ship.getPosition(), plannedPoints.removeFirst().position);
+						plannedPath = new LinkedList<Node>(plannedPoints); 
+						
+						Node last = plannedPoints.getLast();
+						if (last instanceof GoalNode) goalNode = (GoalNode) last;
+						else System.err.println("Last node is not a goal node");
+					
+						return getNextPlannedAction(ship.getPosition());
 					}
 					else
 					{
@@ -177,29 +186,9 @@ public class KnowledgeRepresentation {
 				return action;
 			}
 			
-			// did we bounce off the base?
-			if (ship.getResources().getTotal() == 0 && ship.getEnergy() > 2000 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
-				ship.setCurrentAction(null);
-				aimingForBase.put(ship.getId(), false);
-			}
-			
 			if (plannedPoints.isEmpty()) return new DoNothingAction();
 			
-			Node nextNode = plannedPoints.removeFirst();
-
-			if (plannedPoints.isEmpty())
-			{
-				if (nextNode instanceof GoalNode)
-				{
-					return new BetterMovement(space, ship.getPosition(), nextNode.position, Ship.SHIP_RADIUS + ((GoalNode)nextNode).getGoalRadius());
-				}
-				else
-				{
-					System.err.println("Last node in path was not a goal");
-				}
-			}
-			
-			return new BetterMovement(space, ship.getPosition(), nextNode.position);
+			return getNextPlannedAction(ship.getPosition());
 		}
 		else
 		{
@@ -208,6 +197,24 @@ public class KnowledgeRepresentation {
 	}
 	
 	
+	private AbstractAction getNextPlannedAction(Position shipPosition) {
+		Node nextNode = plannedPoints.removeFirst();
+
+		if (plannedPoints.isEmpty())
+		{
+			if (nextNode instanceof GoalNode)
+			{
+				return new BetterMovement(space, shipPosition, nextNode.position, Ship.SHIP_RADIUS + ((GoalNode)nextNode).getGoalRadius());
+			}
+			else
+			{
+				System.err.println("Last node in path was not a goal");
+			}
+		}
+		
+		return new BetterMovement(space, shipPosition, nextNode.position);
+	}
+
 	/**
 	 * Gets the action for the asteroid collecting ship
 	 * @param space
