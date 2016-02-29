@@ -25,9 +25,6 @@ public class BetterObjectMovement extends BetterMovement {
 		return goalObject;
 	}
 
-
-
-
 	/**
 	 * Returns true if the movement finished or the goal object died or moved
 	 * 

@@ -3,6 +3,7 @@ package grah8384;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.Set;
@@ -67,11 +68,11 @@ public class KnowledgeRepresentation {
 	/**
 	 * The weight of the resources in evaluating asteroids
 	 */
-	final int MONEY_COEFFICIENT = 10;
+	final int MONEY_COEFFICIENT = 1;
 	/**
 	 * The weight of the distance in evaluating asteroids (should be negative)
 	 */
-	final int DISTANCE_COEFFICIENT = -2;
+	final int DISTANCE_COEFFICIENT = -1;
 	
 	Graph graph = null;
 	
@@ -117,6 +118,7 @@ public class KnowledgeRepresentation {
 			{
 				graphicsToAdd.add(new StarGraphics(2, team.getTeamColor(), n.position));
 				/*
+				//Draw lines of graph
 				for (Node j : n.neighbors)
 				{
 					graphicsToAdd.add(new LineGraphics(n.position, j.position, space.findShortestDistanceVector(n.position, j.position)));
@@ -126,25 +128,47 @@ public class KnowledgeRepresentation {
 		}
 		
 		//Draw planned path
-				if (graph != null)
-				{
-					graphicsToAdd.add(new StarGraphics(3, new Color(255,0,0), graph.goal.position));
-					graphicsToAdd.add(new StarGraphics(3, new Color(0,255,0), graph.start.position));
-				}
+		if (graph != null)
+		{
+			graphicsToAdd.add(new StarGraphics(3, new Color(255,0,0), graph.goal.position));
+			graphicsToAdd.add(new StarGraphics(3, new Color(0,255,0), graph.start.position));
+		}
 
-				if(plannedPath != null)
+		if(plannedPath != null)
+		{
+			Node p = null;
+			for (Node n : plannedPath)
+			{
+				if (p != null)
 				{
-					Node p = null;
-					for (Node n : plannedPath)
-					{
-						if (p != null)
-						{
-							graphicsToAdd.add(new LineGraphics(p.position, n.position, space.findShortestDistanceVector(p.position, n.position)));
-						}
-						p = n;
-					}
+					graphicsToAdd.add(new LineGraphics(p.position, n.position, space.findShortestDistanceVector(p.position, n.position)));
 				}
+				p = n;
+			}
+		}
 		
+		if (goalNode != null) {
+			Set<AbstractObject> obstructions = new HashSet<AbstractObject>();
+			//add objects as obstructions
+			obstructions.addAll(Methods.getNonMineableAsteroids(space));
+			obstructions.addAll(space.getBases());
+			obstructions.addAll(space.getShips());
+			
+			obstructions.remove(ship);
+			obstructions.remove(goalNode.getGoalObject());
+			
+			if (space.isPathClearOfObstructions(ship.getPosition(), goalNode.getGoalObject().getPosition(), obstructions, Ship.SHIP_RADIUS))
+			{
+				System.out.println("Change to straight shot");
+				
+				Position goalP = goalNode.getGoalObject().getPosition();
+				double rad = goalNode.getGoalRadius();
+				
+				plannedPoints.clear();
+				goalNode = null;
+				return new BetterMovement(space, ship.getPosition(), goalP, Ship.SHIP_RADIUS + rad);
+			}
+		}
 		
 		if (goalNode != null && goalNode.isGone()) {
 			System.out.println("Goal gone, replan");
@@ -161,9 +185,9 @@ public class KnowledgeRepresentation {
 				AbstractObject goal = getActionObject(space, ship);
 
 				if (goal != null)
-				{		
+				{	
 					this.graph = new Graph(space, ship, goal, 50);
-						
+					
 					plannedPoints = graph.getPath();
 
 					if (plannedPoints != null)

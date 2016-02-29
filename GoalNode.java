@@ -11,23 +11,29 @@ public class GoalNode extends Node
 {
 	private AbstractObject goal;
 	private Position predictedPosition;
+	Toroidal2DPhysics space;
 	
-	public GoalNode( AbstractObject goal, Position predPos, double shortestDistanceFromStartToGoal) {
+	public GoalNode( Toroidal2DPhysics space, AbstractObject goal, Position predPos, double shortestDistanceFromStartToGoal) {
 		super(predPos, 0);
 		this.goal = goal;
 		this.predictedPosition = predPos;
+		this.space = space;
 	}
 	
 	public int getGoalRadius() {
 		return goal.getRadius();
 	}
-
+	
+	public AbstractObject getGoalObject() {
+		return goal;
+	}
+	
 	public boolean isGone() {
-		if (goal == null) {
+		if (space.getObjectById(goal.getId()) == null) {
 			return true;
 		}
 		
-		if (!goal.isAlive()) {
+		if (!space.getObjectById(goal.getId()).isAlive()) {
 			return true;
 		} 
 		

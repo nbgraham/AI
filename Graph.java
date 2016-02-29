@@ -31,7 +31,7 @@ public class Graph {
 		this.goalObject = goal;
 		
 		double dist = space.findShortestDistance(ship.getPosition(), goal.getPosition());
-		this.goal = new GoalNode(goal, getPredictedPosition(goal.getPosition(), dist), dist);
+		this.goal = new GoalNode(space, goal, getPredictedPosition(goal.getPosition(), dist), dist);
 		this.start = new Node(ship.getPosition(), space.findShortestDistance(ship.getPosition(), this.goal.getPosition()), 0);
 	
 		buildGraph(sampleSize);
@@ -74,8 +74,8 @@ public class Graph {
 				
 				//get a random point
 				Position samplePosition;
-				if (i < sampleSize/2) samplePosition = space.getRandomFreeLocationInRegion(seed, Ship.SHIP_RADIUS, (int) oneThird.getX(), (int) twoThirds.getY(), shortestVector.getMagnitude()*.66);
-				else samplePosition = space.getRandomFreeLocationInRegion(seed, Ship.SHIP_RADIUS, (int) twoThirds.getX(), (int) twoThirds.getY(), shortestVector.getMagnitude()*.66);
+				if (i%2 == 0) samplePosition = space.getRandomFreeLocationInRegion(seed, Ship.SHIP_RADIUS, (int) oneThird.getX(), (int) twoThirds.getY(), shortestVector.getMagnitude()*.5);
+				else samplePosition = space.getRandomFreeLocationInRegion(seed, Ship.SHIP_RADIUS, (int) twoThirds.getX(), (int) twoThirds.getY(), shortestVector.getMagnitude()*.5);
 				//construct a node from the random point
 				Node nodeI = new Node(samplePosition);
 				
@@ -127,7 +127,7 @@ public class Graph {
 							q.clear();
 							break;
 						}
-						q.add(n);
+						if(!q.contains(n)) q.add(n);
 					}
 				}
 			}
@@ -147,8 +147,7 @@ public class Graph {
 	
 	private int getCost(Node initialNode, Node finalNode)
 	{
-		return 200;
-		//return (int) space.findShortestDistance(initialNode.position, finalNode.position)*2;
+		return (int) space.findShortestDistance(initialNode.position, finalNode.position);
 	}
 	
 	public void print(){
