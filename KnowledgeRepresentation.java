@@ -164,7 +164,7 @@ public class KnowledgeRepresentation {
 				Position goalP = goalNode.getGoalObject().getPosition();
 				double rad = goalNode.getGoalRadius();
 				
-				plannedPoints.clear();
+				if (plannedPoints != null) plannedPoints.clear();
 				goalNode = null;
 				return new BetterMovement(space, ship.getPosition(), goalP, Ship.SHIP_RADIUS + rad);
 			}
@@ -186,6 +186,20 @@ public class KnowledgeRepresentation {
 
 				if (goal != null)
 				{	
+					if (graph != null)
+					{
+						for (Node n : graph.graph)
+						{
+							n.neighbors = null;
+							n.parent = null;
+							n =  null;
+						}
+						graph.graph = null;
+						graph.start = null;
+						graph.goal = null;
+					}
+					graph = null;
+					
 					this.graph = new Graph(space, ship, goal, 50);
 					
 					plannedPoints = graph.getPath();
@@ -225,7 +239,7 @@ public class KnowledgeRepresentation {
 		if (ship.getEnergy() < 2000) {
 			return STATE.LOW_ENERGY;
 		}else{
-			if (ship.getResources().getTotal() > 500) {
+			if (ship.getResources().getTotal() > 1000) {
 				return STATE.FULL_LOAD;
 			}else{
 				return STATE.SEEK_RESOURCE;
@@ -234,24 +248,26 @@ public class KnowledgeRepresentation {
 	}
 	
 	public AbstractObject getActionObject(Toroidal2DPhysics space, Ship ship){
-		AbstractObject newAction = null;
+		AbstractObject goalObject = null;
 		
 		switch(getState(space, ship)){
 			case LOW_ENERGY:
 				Beacon beacon = pickNearestBeacon(space, ship);
 				
-				// if there is no beacon, then just skip a turn
+				// if there is no beacon, then go to base
 				if (beacon == null) {
-					newAction = null;
+					Base base = findNearestBase(space, ship);
+					goalObject = base;
+					aimingForBase.put(ship.getId(), true);
 				} else {
-					newAction = beacon;
+					goalObject = beacon;
+					aimingForBase.put(ship.getId(), false);
 				}
-				aimingForBase.put(ship.getId(), false);
 				
 			break;
 			case FULL_LOAD:
 				Base base = findNearestBase(space, ship);
-				newAction = base;
+				goalObject = base;
 				aimingForBase.put(ship.getId(), true);
 			break;
 			case SEEK_RESOURCE:
@@ -267,18 +283,18 @@ public class KnowledgeRepresentation {
 					beacon = pickNearestBeacon(space, ship);
 					// if there is no beacon, then just skip a turn
 					if (beacon == null) {
-						newAction = null;
+						goalObject = null;
 					} else {
-						newAction = asteroid;
+						goalObject = asteroid;
 					}
 				} else {
 					asteroidToShipMap.put(asteroid.getId(), ship);
-					newAction = asteroid;
+					goalObject = asteroid;
 				}
 			break;
 		}
 	
-		return newAction;
+		return goalObject;
 	}
 	
 	
