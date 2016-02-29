@@ -110,26 +110,40 @@ public class KnowledgeRepresentation {
 			asteroidCollectorID = ship.getId();
 		}
 		
-		
-		//Draw planned path
-		if (graph != null)
+		//Draw graph
+		if (this.graph != null)
 		{
-			graphicsToAdd.add(new StarGraphics(3, new Color(255,0,0), graph.goal.position));
-			graphicsToAdd.add(new StarGraphics(3, new Color(0,255,0), graph.start.position));
-		}
-
-		if(plannedPath != null)
-		{
-			Node p = null;
-			for (Node n : plannedPath)
+			for(Node n : this.graph.graph)
 			{
-				if (p != null)
+				graphicsToAdd.add(new StarGraphics(2, team.getTeamColor(), n.position));
+				/*
+				for (Node j : n.neighbors)
 				{
-					graphicsToAdd.add(new LineGraphics(p.position, n.position, space.findShortestDistanceVector(p.position, n.position)));
+					graphicsToAdd.add(new LineGraphics(n.position, j.position, space.findShortestDistanceVector(n.position, j.position)));
 				}
-				p = n;
+				*/
 			}
 		}
+		
+		//Draw planned path
+				if (graph != null)
+				{
+					graphicsToAdd.add(new StarGraphics(3, new Color(255,0,0), graph.goal.position));
+					graphicsToAdd.add(new StarGraphics(3, new Color(0,255,0), graph.start.position));
+				}
+
+				if(plannedPath != null)
+				{
+					Node p = null;
+					for (Node n : plannedPath)
+					{
+						if (p != null)
+						{
+							graphicsToAdd.add(new LineGraphics(p.position, n.position, space.findShortestDistanceVector(p.position, n.position)));
+						}
+						p = n;
+					}
+				}
 		
 		
 		if (goalNode != null && goalNode.isGone()) {
@@ -148,22 +162,8 @@ public class KnowledgeRepresentation {
 
 				if (goal != null)
 				{		
-					this.graph = new Graph(space, ship, goal, 200);
-					
-					/*
-					//Draw graph
-					for(Node n : g.graph)
-					{
-						graphicsToAdd.add(new StarGraphics(2, team.getTeamColor(), n.position));
-						for (Node j : n.neighbors)
-						{
-							graphicsToAdd.add(new LineGraphics(n.position, j.position, space.findShortestDistanceVector(n.position, j.position)));
-						}
-					}
-					System.out.println("Current postion: X: " + ship.getPosition().getX() + " Y: " + ship.getPosition().getY());
-					System.out.println("Goal postion: X: " + goal.getPosition().getX() + " Y: " + goal.getPosition().getY());
-					*/
-					
+					this.graph = new Graph(space, ship, goal, 50);
+						
 					plannedPoints = graph.getPath();
 
 					if (plannedPoints != null)
@@ -184,9 +184,8 @@ public class KnowledgeRepresentation {
 				
 			}
 			
-			if (plannedPoints.isEmpty()) return new DoNothingAction();
-			
-			return getNextPlannedAction(ship.getPosition());
+			if (plannedPoints == null || plannedPoints.isEmpty()) return new DoNothingAction();
+			else return getNextPlannedAction(ship.getPosition());
 		}
 		else
 		{

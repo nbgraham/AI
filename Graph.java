@@ -59,6 +59,10 @@ public class Graph {
 		graph.add(this.start);
 		graph.add(this.goal);
 		
+		Vector2D shortestVector = space.findShortestDistanceVector(start.position, goal.position);
+		Position oneThird = add(start.position, shortestVector.multiply(.33));
+		Position twoThirds = add(start.position, shortestVector.multiply(.66));
+		
 		if (space.isPathClearOfObstructions(start.getPosition(), goal.getPosition(), obstructions, Ship.SHIP_RADIUS))
 		{
 			start.addNeighbor(goal);
@@ -69,7 +73,9 @@ public class Graph {
 			for(int i=0; i < sampleSize; i++){
 				
 				//get a random point
-				Position samplePosition = space.getRandomFreeLocation(seed, Ship.SHIP_RADIUS);
+				Position samplePosition;
+				if (i < sampleSize/2) samplePosition = space.getRandomFreeLocationInRegion(seed, Ship.SHIP_RADIUS, (int) oneThird.getX(), (int) twoThirds.getY(), shortestVector.getMagnitude()*.66);
+				else samplePosition = space.getRandomFreeLocationInRegion(seed, Ship.SHIP_RADIUS, (int) twoThirds.getX(), (int) twoThirds.getY(), shortestVector.getMagnitude()*.66);
 				//construct a node from the random point
 				Node nodeI = new Node(samplePosition);
 				
@@ -88,6 +94,10 @@ public class Graph {
 		}
 	}
 	
+	private Position add(Position position, Vector2D vector) {
+		return new Position(position.getX() + vector.getXValue(), position.getY() + vector.getYValue());
+	}
+
 	public LinkedList<Node> getPath(){
 		Node currentNode;
 
