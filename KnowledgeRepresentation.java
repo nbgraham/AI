@@ -135,6 +135,7 @@ public class KnowledgeRepresentation {
 		if (goalNode != null && goalNode.isGone()) {
 			System.out.println("Goal gone, replan");
 			plannedPoints.clear();
+			ship.setCurrentAction(null);
 			return null;
 		}
 		
@@ -143,12 +144,10 @@ public class KnowledgeRepresentation {
 			if (timeSteps >= 10)
 			{
 				timeSteps = 0;
-				AbstractAction action;
-				// get the asteroids
-				action = getAsteroidCollectorAction(space, ship);
-				if (action instanceof BetterObjectMovement)
+				AbstractObject goal = getActionObject(space, ship);
+
+				if (goal != null)
 				{		
-					AbstractObject goal = ((BetterObjectMovement) action).getGoalObject();
 					this.graph = new Graph(space, ship, goal, 200);
 					
 					/*
@@ -183,7 +182,6 @@ public class KnowledgeRepresentation {
 					}	
 				}
 				
-				return action;
 			}
 			
 			if (plannedPoints.isEmpty()) return new DoNothingAction();
@@ -194,6 +192,70 @@ public class KnowledgeRepresentation {
 		{
 			return ship.getCurrentAction();
 		}
+	}
+	
+	private enum STATE{
+		LOW_ENERGY, FULL_LOAD, SEEK_RESOURCE;
+	}
+	
+	private STATE getState(Toroidal2DPhysics space, Ship ship){
+		if (ship.getEnergy() < 2000) {
+			return STATE.LOW_ENERGY;
+		}else{
+			if (ship.getResources().getTotal() > 500) {
+				return STATE.FULL_LOAD;
+			}else{
+				return STATE.SEEK_RESOURCE;
+			}	
+		}
+	}
+	
+	public AbstractObject getActionObject(Toroidal2DPhysics space, Ship ship){
+		AbstractObject newAction = null;
+		
+		switch(getState(space, ship)){
+			case LOW_ENERGY:
+				Beacon beacon = pickNearestBeacon(space, ship);
+				
+				// if there is no beacon, then just skip a turn
+				if (beacon == null) {
+					newAction = null;
+				} else {
+					newAction = beacon;
+				}
+				aimingForBase.put(ship.getId(), false);
+				
+			break;
+			case FULL_LOAD:
+				Base base = findNearestBase(space, ship);
+				newAction = base;
+				aimingForBase.put(ship.getId(), true);
+			break;
+			case SEEK_RESOURCE:
+				if (ship.getResources().getTotal() == 0 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
+					aimingForBase.put(ship.getId(), false);
+				}
+				
+				aimingForBase.put(ship.getId(), false);
+				Asteroid asteroid = pickHighestValueFreeAsteroid(space, ship);
+
+				if (asteroid == null) {
+					// there is no asteroid available so collect a beacon
+					beacon = pickNearestBeacon(space, ship);
+					// if there is no beacon, then just skip a turn
+					if (beacon == null) {
+						newAction = null;
+					} else {
+						newAction = asteroid;
+					}
+				} else {
+					asteroidToShipMap.put(asteroid.getId(), ship);
+					newAction = asteroid;
+				}
+			break;
+		}
+	
+		return newAction;
 	}
 	
 	
@@ -213,76 +275,6 @@ public class KnowledgeRepresentation {
 		}
 		
 		return new BetterMovement(space, shipPosition, nextNode.position);
-	}
-
-	/**
-	 * Gets the action for the asteroid collecting ship
-	 * @param space
-	 * @param ship
-	 * @return
-	 */
-	public AbstractAction getAsteroidCollectorAction(Toroidal2DPhysics space,
-			Ship ship) {
-		AbstractAction currentAction = ship.getCurrentAction();
-
-		// aim for a beacon if there isn't enough energy
-		if (ship.getEnergy() < 2000) {
-			Beacon beacon = pickNearestBeacon(space, ship);
-			AbstractAction newAction = null;
-			// if there is no beacon, then just skip a turn
-			if (beacon == null) {
-				newAction = new DoNothingAction();
-			} else {
-				newAction = new BetterObjectMovement(space, ship.getPosition(), beacon);
-			}
-			aimingForBase.put(ship.getId(), false);
-			return newAction;
-		}
-
-		// if the ship has enough resourcesAvailable, take it back to base
-		if (ship.getResources().getTotal() > 500) {
-			Base base = findNearestBase(space, ship);
-			AbstractAction newAction = new BetterObjectMovement(space, ship.getPosition(), base);
-			aimingForBase.put(ship.getId(), true);
-			return newAction;
-		}
-
-		// did we bounce off the base?
-		if (ship.getResources().getTotal() == 0 && ship.getEnergy() > 2000 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
-			currentAction = null;
-			aimingForBase.put(ship.getId(), false);
-		}
-
-		// otherwise aim for the asteroid
-		if (currentAction == null || currentAction.isMovementFinished(space)) {
-			aimingForBase.put(ship.getId(), false);
-			Asteroid asteroid = pickHighestValueFreeAsteroid(space, ship);
-
-			AbstractAction newAction = null;
-
-			if (asteroid == null) {
-				// there is no asteroid available so collect a beacon
-				Beacon beacon = pickNearestBeacon(space, ship);
-				// if there is no beacon, then just skip a turn
-				if (beacon == null) {
-					newAction = new DoNothingAction();
-				} else {
-					newAction = fastAction(ship,asteroid, 1);
-				}
-			} else {
-				asteroidToShipMap.put(asteroid.getId(), ship);
-				newAction = new BetterObjectMovement(space, ship.getPosition(), asteroid);
-			}
-			return newAction;
-		} else {
-			return ship.getCurrentAction();
-		}
-	}
-
-
-	public AbstractAction fastAction(Ship ship, AbstractObject goal, double percent)
-	{
-		return new MoveAction(space, ship.getPosition(), goal.getPosition(), space.findShortestDistanceVector(ship.getPosition(), goal.getPosition()).getUnitVector().multiply(Toroidal2DPhysics.MAX_TRANSLATIONAL_VELOCITY).multiply(percent));
 	}
 	
 	/**
