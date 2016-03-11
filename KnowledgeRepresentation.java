@@ -185,22 +185,16 @@ public class KnowledgeRepresentation {
 
 				if (goal != null)
 				{	
-					if (graph != null)
-					{
-						for (Node n : graph.graph)
-						{
-							if (n.neighbors != null) n.neighbors.clear();
-							n.neighbors = null;
-							n.parent = null;
-							n =  null;
-						}
-						graph.graph = null;
-						graph.start = null;
-						graph.goal = null;
-					}
-					graph = null;
-					
-					if (plannedPoints != null) plannedPoints.clear();
+					if(this.graph != null){
+                        this.graph.nullify();
+                        this.graph = null;
+                    }
+                    if(plannedPoints != null){
+                        plannedPoints.clear();
+                        plannedPoints = null;
+                    }
+                   
+                    this.graph = new Graph(space, ship, goal, 50);
 					
 					this.graph = new Graph(space, ship, goal, 50);
 					
