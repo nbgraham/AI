@@ -82,6 +82,8 @@ public class KnowledgeRepresentation {
 	
 	private double[] weights = {2000,100,500,100,1,500,10,0.5,5};
 	
+	private HashSet<AbstractObject> obstructions = null;
+	
 	/**
 	 * Creates a new knowledge representation for the <code>team</code> based on the give <code>space</code>
 	 * 
@@ -149,32 +151,34 @@ public class KnowledgeRepresentation {
 //			}
 //		}
 		
-		//Straight shot
-//		if (goalNode != null) {	
-//			obstructions.remove(ship);
-//			obstructions.remove(goalNode.getGoalObject());
-//			
-//			if (space.isPathClearOfObstructions(ship.getPosition(), goalNode.getGoalObject().getPosition(), obstructions, Ship.SHIP_RADIUS))
-//			{
-//				System.out.println("Change to straight shot");
-//				
-//				Position goalP = goalNode.getGoalObject().getPosition();
-//				double rad = goalNode.getGoalRadius();
-//				
-//				if (plannedPoints != null) plannedPoints.clear();
-//				goalNode = null;
-//				return new BetterMovement(space, ship.getPosition(), goalP, Ship.SHIP_RADIUS + rad);
-//			}
-//			obstructions.add(ship);
-//			obstructions.add(goalNode.getGoalObject());
-//		}
+		if (obstructions == null) obstructions = (HashSet<AbstractObject>) space.getAllObjects();
 		
-//		if (goalNode != null && goalNode.isGone()) {
+		//Straight shot
+		if (timeSteps%2 == 0 && goalNode != null) {	
+			obstructions.remove(ship);
+			obstructions.remove(goalNode.getGoalObject());
+			
+			if (space.isPathClearOfObstructions(ship.getPosition(), goalNode.getGoalObject().getPosition(), obstructions, Ship.SHIP_RADIUS))
+			{
+//				System.out.println("Change to straight shot");
+				
+				Position goalP = goalNode.getGoalObject().getPosition();
+				double rad = goalNode.getGoalRadius();
+				
+				if (plannedPoints != null) plannedPoints.clear();
+				goalNode = null;
+				return new BetterMovement(space, ship.getPosition(), goalP, Ship.SHIP_RADIUS + rad);
+			}
+			obstructions.add(ship);
+			obstructions.add(goalNode.getGoalObject());
+		}
+		
+		if (goalNode != null && goalNode.isGone()) {
 //			System.out.println("Goal gone, replan");
-//			plannedPoints.clear();
-//			ship.setCurrentAction(null);
-//			return null;
-//		}
+			plannedPoints.clear();
+			ship.setCurrentAction(null);
+			return null;
+		}
 		
 		if (ship.getCurrentAction() == null || ship.getCurrentAction().isMovementFinished(space))
 		{
