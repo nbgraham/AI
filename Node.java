@@ -12,6 +12,7 @@ public class Node implements Comparable<Node> {
 	double heuristic;
 	int bestPathCost;
 	Position position;
+	boolean isNull = false;
 	
 	public Node(Position pointLocation, double distToGoal, int pathCost){
 		parent = null;
@@ -36,6 +37,31 @@ public class Node implements Comparable<Node> {
 		this.position = pointLocation;
 		this.bestPathCost = Integer.MAX_VALUE;
 	}
+	
+    public void nullify(){
+        if(isNull)
+            return;
+        isNull = true;
+        if(this.position != null){
+            this.position = null;
+        }
+        if(this.parent != null){
+            this.parent.nullify();
+            this.parent = null;
+        }
+        if(this.neighbors != null){
+            for(Node n : this.neighbors){
+                if(n != null){
+                    n.nullify();
+                }
+            }
+            this.neighbors = null;
+        }
+    }
+    
+    public void killNeighbors(){
+        this.neighbors = null;
+    }
 	
 	public Node getParent(){
 		return this.parent;

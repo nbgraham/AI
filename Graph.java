@@ -7,6 +7,7 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.Set;
 
+
 import spacesettlers.actions.MoveAction;
 import spacesettlers.objects.AbstractObject;
 import spacesettlers.objects.Ship;
@@ -35,6 +36,34 @@ public class Graph {
 		this.start = new Node(ship.getPosition(), space.findShortestDistance(ship.getPosition(), this.goal.getPosition()), 0);
 	
 		buildGraph(sampleSize);
+	}
+	
+	public void nullify(){
+		if(this.start != null){
+			this.start.nullify();
+			this.start = null;
+		}
+		if(this.goal != null){
+			this.goal.nullify();
+			this.goal = null;
+		}
+		if(this.ship != null){
+			this.ship = null;
+		}
+		if(this.goalObject != null){
+			this.goalObject = null;
+		}
+		if(this.space != null){
+			this.space = null;
+		}
+		if(this.graph != null){
+			for(Node n : this.graph){
+				if(n != null){
+					n.nullify();
+				}
+			}
+			this.graph = null;
+		}
 	}
 	
 	private static Position getPredictedPosition(Position position, double dist) {
@@ -74,8 +103,8 @@ public class Graph {
 				
 				//get a random point
 				Position samplePosition;
-				if (i%2 == 0) samplePosition = space.getRandomFreeLocationInRegion(seed, Ship.SHIP_RADIUS, (int) oneThird.getX(), (int) twoThirds.getY(), shortestVector.getMagnitude()*.5);
-				else samplePosition = space.getRandomFreeLocationInRegion(seed, Ship.SHIP_RADIUS, (int) twoThirds.getX(), (int) twoThirds.getY(), shortestVector.getMagnitude()*.5);
+				if (i < sampleSize/2) samplePosition = space.getRandomFreeLocationInRegion(seed, Ship.SHIP_RADIUS, (int) oneThird.getX(), (int) twoThirds.getY(), shortestVector.getMagnitude()*.66);
+				else samplePosition = space.getRandomFreeLocationInRegion(seed, Ship.SHIP_RADIUS, (int) twoThirds.getX(), (int) twoThirds.getY(), shortestVector.getMagnitude()*.66);
 				//construct a node from the random point
 				Node nodeI = new Node(samplePosition);
 				
@@ -101,9 +130,11 @@ public class Graph {
 	public LinkedList<Node> getPath(){
 		Node currentNode;
 
+		//System.out.println("Searching...");
 		if (start.neighbors.contains(goal))
 		{
 			goal.setParent(start);
+			//System.out.println("Goal found.");
 		}
 		else
 		{
@@ -124,10 +155,11 @@ public class Graph {
 						if (n.setPathCost(currentNode.bestPathCost + getCost(currentNode,n))) n.setParent(currentNode);
 						if (n.position.equals(goal.position)) {
 							goal.setParent(currentNode);
+							//System.out.println("Goal found.");
 							q.clear();
 							break;
 						}
-						if(!q.contains(n)) q.add(n);
+						if(!q.contains(n))q.add(n);
 					}
 				}
 			}
@@ -135,19 +167,25 @@ public class Graph {
 		
 		LinkedList<Node> result = new LinkedList<Node>();
 		currentNode = goal;
-		if (currentNode.parent == null) return null; //Failure
+		if (currentNode.parent == null){
+			//System.out.println("No path.");
+			return null; //Failure
+		}
 		while(currentNode.parent != null)
 		{
 			result.addFirst(currentNode);
 			currentNode = currentNode.parent;
 		}
 		
+		
+		
 		return result;
 	}
 	
 	private int getCost(Node initialNode, Node finalNode)
 	{
-		return (int) space.findShortestDistance(initialNode.position, finalNode.position);
+		return 200;
+		//return (int) space.findShortestDistance(initialNode.position, finalNode.position)*2;
 	}
 	
 	public void print(){
