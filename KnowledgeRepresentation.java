@@ -236,19 +236,19 @@ public class KnowledgeRepresentation {
 	private AbstractObject getActionObject(Toroidal2DPhysics space, Ship ship){
 		if (ship.getEnergy() < weights[0]) {
 			Asteroid asteroid = getBestAsteroid(ship);
-			if (getCost(asteroid, ship) < weights[1]) {
+			if (asteroid != null && getCost(asteroid, ship) < weights[1]) {
 				return asteroid;
 			}
 			Base base = getBestBase(ship);
 			Beacon beacon = getBestBeacon(ship);
-			if (getCost(beacon, ship) < getCost(base, ship)) return beacon;
+			if (beacon != null && base != null && getCost(beacon, ship) < getCost(base, ship)) return beacon;
 			else {
 				aimingForBase.put(ship.getId(), true);
 				return base;
 			}
 		}else{
 			Base base = getBestDropOffBase(ship);
-			if (ship.getResources().getTotal() > weights[2] && getCostDropOffResources(base, ship) < weights[3]) {
+			if (ship.getResources().getTotal() > weights[2] && base != null && getCostDropOffResources(base, ship) < weights[3]) {
 				aimingForBase.put(ship.getId(), true);
 				return base;
 
@@ -321,7 +321,7 @@ public class KnowledgeRepresentation {
 	}
 
 	private double getCost(AbstractObject object, Ship ship) {
-		ArrayList<Asteroid> asteroids = getMineableAsteroidsAroud(object);
+		HashSet<Asteroid> asteroids = getMineableAsteroidsAround(object);
 		int totalResourcesAround = sumResources(asteroids);
 		int asteroidsAround = asteroids.size();
 		
@@ -353,7 +353,7 @@ public class KnowledgeRepresentation {
 		return velocity.getMagnitude() * velocity.angleBetween(displacement);
 	}
 
-	private int sumResources(ArrayList<Asteroid> asteroids) {
+	private int sumResources(HashSet<Asteroid> asteroids) {
 		int result = 0;
 		for (Asteroid asteroid : asteroids) {
 			result += asteroid.getMass();
@@ -361,15 +361,16 @@ public class KnowledgeRepresentation {
 		return result;
 	}
 
-	private ArrayList<Asteroid> getMineableAsteroidsAroud(AbstractObject object) {
+	private HashSet<Asteroid> getMineableAsteroidsAround(AbstractObject object) {
 		int radius = 200;
 		Position p = object.getPosition();
-		ArrayList<Asteroid> asteroids = (ArrayList<Asteroid>) space.getAsteroids();
+		HashSet<Asteroid> asteroids = (HashSet<Asteroid>) space.getAsteroids();
+		HashSet<Asteroid> result = new HashSet<Asteroid>();
 		for (Asteroid asteroid : asteroids) {
-			if (!asteroid.isMineable()) asteroids.remove(asteroid);
-			if (space.findShortestDistance(p, asteroid.getPosition()) > radius) asteroids.remove(asteroid);
+			if (!asteroid.isMineable() || space.findShortestDistance(p, asteroid.getPosition()) > radius) continue;
+			result.add(asteroid);
 		}
-		return asteroids;
+		return result;
 	}	
 	
 	private AbstractAction getNextPlannedAction(Position shipPosition) {
