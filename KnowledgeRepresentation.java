@@ -275,6 +275,7 @@ public class KnowledgeRepresentation {
 		Base result = null;
 		double lowestCost = Double.MAX_VALUE;
 		for (Base base : Bases) {
+			if (base.getTeamName() != team.getTeamName()) continue;
 			double cost = getCostDropOffResources(base, ship);
 			if (cost < lowestCost) {
 				lowestCost = cost;
@@ -289,6 +290,7 @@ public class KnowledgeRepresentation {
 		Base result = null;
 		double lowestCost = Double.MAX_VALUE;
 		for (Base base : Bases) {
+			if (base.getTeamName() != team.getTeamName()) continue;
 			double cost = getCost(base, ship);
 			if (cost < lowestCost) {
 				lowestCost = cost;
