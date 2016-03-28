@@ -486,4 +486,10 @@ public class KnowledgeRepresentation {
 
 		return closestBeacon;
 	}
+
+	public void clear() {
+		plannedPoints.clear();
+		plannedPath.clear();
+		goalNode = null;
+	}
 }

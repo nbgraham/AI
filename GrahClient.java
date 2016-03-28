@@ -69,9 +69,11 @@ public class GrahClient extends TeamClient {
 			if (actionable instanceof Ship) {
 				Ship ship = (Ship) actionable;
 				
-				AbstractAction action = model.getAction(ship, space);
-				
-				actions.put(ship.getId(), action);
+				if (!ship.isAlive()) model.clear();
+				else {
+					AbstractAction action = model.getAction(ship, space);				
+					actions.put(ship.getId(), action);
+				}
 				
 			} else {
 				// it is a base.  Heuristically decide when to use the shield (TODO)
