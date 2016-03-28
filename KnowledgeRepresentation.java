@@ -80,7 +80,7 @@ public class KnowledgeRepresentation {
 	
 	protected GoalNode goalNode = null;
 	
-	private double[] weights = {2000,100,500,100,1,500,10,0.5,5};
+	private double[] weights = {2000,1500000,500,1,1,10000,1,1,1};
 	
 	private HashSet<AbstractObject> obstructions = null;
 	
