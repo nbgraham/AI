@@ -554,8 +554,8 @@ public class KnowledgeRepresentation {
 	}
 
 	public void clear() {
-		plannedPoints.clear();
-		plannedPath.clear();
+		if (plannedPoints != null) plannedPoints.clear();
+		if (plannedPoints != null) plannedPath.clear();
 		goalNode = null;
 	}
 }
