@@ -119,27 +119,52 @@ public class KnowledgeRepresentation {
 		drawPlannedPath();
 				
 		//Straight shot
-		if (timeSteps%2 == 0 && goalNode != null) {	
-			obstructions.remove(ship);
-			obstructions.remove(goalNode.getGoalObject());
-			
-			if (space.isPathClearOfObstructions(ship.getPosition(), goalNode.getGoalObject().getPosition(), obstructions, Ship.SHIP_RADIUS))
-			{
-//				System.out.println("Change to straight shot");
+		if (plannedPoints != null){
+			if (goalNode != null && plannedPoints.size() > 1) {
+				obstructions = (HashSet<AbstractObject>) space.getAllObjects();
+				obstructions.remove(ship);
+				obstructions.remove(goalNode.getGoalObject());
 				
-				Position goalP = goalNode.getGoalObject().getPosition();
-				double rad = goalNode.getGoalRadius();
-				
-				if (plannedPoints != null) plannedPoints.clear();
-				goalNode = null;
-				return new BetterMovement(space, ship.getPosition(), goalP, Ship.SHIP_RADIUS + rad);
+				if (space.isPathClearOfObstructions(ship.getPosition(), goalNode.getGoalObject().getPosition(), obstructions, Ship.SHIP_RADIUS))
+				{
+					//System.out.println("Change to straight shot");
+					
+					Position goalP = goalNode.getGoalObject().getPosition();
+					double rad = goalNode.getGoalRadius();
+					
+					if (plannedPoints != null) plannedPoints.clear();
+					plannedPoints.add(goalNode);
+					return new BetterMovement(space, ship.getPosition(), goalP, Ship.SHIP_RADIUS + rad);
+				}
+				obstructions = null;
 			}
-			obstructions.add(ship);
-			obstructions.add(goalNode.getGoalObject());
+			//If it is already a straight shot, recheck every ten timesteps
+			else if (plannedPoints.size() == 1 && timeSteps > 10) {
+				obstructions = (HashSet<AbstractObject>) space.getAllObjects();
+				obstructions.remove(ship);
+				obstructions.remove(goalNode.getGoalObject());
+				timeSteps = 0;
+				
+				if (space.isPathClearOfObstructions(ship.getPosition(), goalNode.getGoalObject().getPosition(), obstructions, Ship.SHIP_RADIUS))
+				{
+					//System.out.println("Replanned straight shot");
+			
+					Position goalP = goalNode.getGoalObject().getPosition();
+					double rad = goalNode.getGoalRadius();
+					
+					if (plannedPoints != null) plannedPoints.clear();
+					plannedPoints.add(goalNode);
+					return new BetterMovement(space, ship.getPosition(), goalP, Ship.SHIP_RADIUS + rad);
+				}
+				else {
+					//System.out.println("Straight shot no longer possible.");
+				}
+				obstructions = null;
+			}
 		}
 		
 		if (goalNode != null && goalNode.isGone()) {
-//			System.out.println("Goal gone, replan");
+			//System.out.println("Goal gone, replan");
 			plannedPoints.clear();
 			ship.setCurrentAction(null);
 			return null;
