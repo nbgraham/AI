@@ -164,9 +164,7 @@ public class KnowledgeRepresentation {
                     }
                    
                     this.graph = new Graph(space, ship, goal, 50);
-					
-					this.graph = new Graph(space, ship, goal, 50);
-					
+										
 					plannedPoints = graph.getPath();
 
 					if (plannedPoints != null)
