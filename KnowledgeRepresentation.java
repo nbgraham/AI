@@ -154,11 +154,11 @@ public class KnowledgeRepresentation {
 
 				if (goal != null)
 				{	
-					if(this.graph != null){
+					if (this.graph != null){
                         this.graph.nullify();
                         this.graph = null;
                     }
-                    if(plannedPoints != null){
+                    if (plannedPoints != null){
                         plannedPoints.clear();
                         plannedPoints = null;
                     }
@@ -180,7 +180,16 @@ public class KnowledgeRepresentation {
 					else
 					{
 						System.out.println("No path found");
+						//Need to replan
+						timeSteps = 35;
+						return new DoNothingAction();
 					}	
+				}
+				//goal is null
+				else {
+					//Need to replan
+					timeSteps = 35;
+					return new DoNothingAction();
 				}
 				
 			}
