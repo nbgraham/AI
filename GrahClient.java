@@ -55,6 +55,8 @@ public class GrahClient extends TeamClient {
 	@Override
 	public void shutDown(Toroidal2DPhysics space) {
 		// TODO Auto-generated method stub
+		model.clear();
+		model = null;
 	}
 
 	/**
@@ -80,6 +82,7 @@ public class GrahClient extends TeamClient {
 				actions.put(actionable.getId(), new DoNothingAction());
 			}
 		} 
+		
 		return actions;
 	}
 
