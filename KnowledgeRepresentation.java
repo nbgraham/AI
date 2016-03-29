@@ -24,7 +24,6 @@ import spacesettlers.objects.Beacon;
 import spacesettlers.objects.Ship;
 import spacesettlers.simulator.Toroidal2DPhysics;
 import spacesettlers.utilities.Position;
-import spacesettlers.utilities.Vector2D;
 import grah8384.Graph;
 
 public class KnowledgeRepresentation {
@@ -33,7 +32,7 @@ public class KnowledgeRepresentation {
 	 */
 	TeamClient team;
 	/**
-	 * The space that the team is operating in
+	 * The space that the team is operating inc
 	 */
 	Toroidal2DPhysics space;
 	
@@ -63,7 +62,7 @@ public class KnowledgeRepresentation {
 	/**
 	 * Counter to re-plan every ten time steps
 	 */
-	protected int timeSteps = 35;
+	protected int timeSteps = 20;
 	
 	/**
 	 * The weight of the resources in evaluating asteroids
@@ -79,13 +78,6 @@ public class KnowledgeRepresentation {
 	protected LinkedList<Node> plannedPath;
 	
 	protected GoalNode goalNode = null;
-	
-	private double[] weights = {2000,1500000,500,1,1,10000,1,1,1};
-	
-	private HashSet<AbstractObject> obstructions = null;
-	
-	FollowPathAction followPathAction;
-	HashMap <UUID, Graph> graphByShip = new HashMap<UUID, Graph>();
 	
 	/**
 	 * Creates a new knowledge representation for the <code>team</code> based on the give <code>space</code>
@@ -110,219 +102,172 @@ public class KnowledgeRepresentation {
 	 * @param space
 	 * @return
 	 */
-	public AbstractAction getAction(Ship ship, Toroidal2DPhysics space, int currentTimesteps) {		
+	public AbstractAction getAction(Ship ship, Toroidal2DPhysics space) {
+		timeSteps++;
+		
 		// the first time we initialize, decide which ship is the asteroid collector
 		if (asteroidCollectorID == null) {
 			asteroidCollectorID = ship.getId();
 		}
 		
-		AbstractObject goal = getActionObject(space, ship);
-		if (goal == null) return new DoNothingAction();
-		AbstractAction action = getAStarPathToGoal(space, ship, goal.getPosition());
-		graphicsToAdd.add(new StarGraphics(Color.RED, goal.getPosition()));
+		//Draw graph
+		if (this.graph != null)
+		{
+			for(Node n : this.graph.graph)
+			{
+				graphicsToAdd.add(new StarGraphics(2, team.getTeamColor(), n.position));
+				/*
+				for (Node j : n.neighbors)
+				{
+					graphicsToAdd.add(new LineGraphics(n.position, j.position, space.findShortestDistanceVector(n.position, j.position)));
+				}
+				*/
+			}
+		}
 		
-		return action;
-	}
+		//Draw planned path
+				if (graph != null)
+				{
+					graphicsToAdd.add(new StarGraphics(3, new Color(255,0,0), graph.goal.position));
+					graphicsToAdd.add(new StarGraphics(3, new Color(0,255,0), graph.start.position));
+				}
 
-	private AbstractAction getAStarPathToGoal(Toroidal2DPhysics space2, Ship ship, Position goalPosition) {
-		AbstractAction newAction;
+				if(plannedPath != null)
+				{
+					Node p = null;
+					for (Node n : plannedPath)
+					{
+						if (p != null)
+						{
+							graphicsToAdd.add(new LineGraphics(p.position, n.position, space.findShortestDistanceVector(p.position, n.position)));
+						}
+						p = n;
+					}
+				}
 		
-		Graph graph = AStarSearch.createGraphToGoalWithBeacons(space, ship, goalPosition, new Random());
-		Vertex[] path = graph.findAStarPath(space);
-		followPathAction = new FollowPathAction(path);
-		//followPathAction.followNewPath(path);
-		newAction = followPathAction.followPath(space, ship);
-		graphByShip.put(ship.getId(), graph);
+				
+		
+		if (goalNode != null && goalNode.isGone()) {
+			//System.out.println("Goal gone, replan");
+			if(plannedPoints !=null)  plannedPoints.clear();
+			ship.setCurrentAction(null);
+			return null;
+		}
+		
+		if (ship.getCurrentAction() == null || ship.getCurrentAction().isMovementFinished(space))
+		{
+			if (timeSteps >= 10)
+			{
+				timeSteps = 0;
+
+				AbstractObject goal = getActionObject(space, ship);
+
+				if (goal != null)
+				{		
+					if(this.graph != null){
+						this.graph.nullify();
+						this.graph = null;
+					}
+					if(plannedPoints != null){ 
+						plannedPoints.clear();
+						plannedPoints = null;
+					}
+					
+					this.graph = new Graph(space, ship, goal, 50);
+					
+					plannedPoints = graph.getPath();
+
+					if (plannedPoints != null)
+					{
+						//plannedPath = new LinkedList<Node>(plannedPoints); 
+						
+						Node last = plannedPoints.getLast();
+						if (last instanceof GoalNode) goalNode = (GoalNode) last;
+						else System.err.println("Last node is not a goal node");
+					
+						return getNextPlannedAction(ship.getPosition());
+					}
+					else
+					{
+						//System.out.println("No path found");
+					}	
+				}
+				
+			}
+			
+			if (plannedPoints == null || plannedPoints.isEmpty()) return new DoNothingAction();
+			else return getNextPlannedAction(ship.getPosition());
+		}
+		else
+		{
+			return ship.getCurrentAction();
+		}
+	}
+	
+	private enum STATE{
+		LOW_ENERGY, FULL_LOAD, SEEK_RESOURCE;
+	}
+	
+	private STATE getState(Toroidal2DPhysics space, Ship ship){
+		if (ship.getEnergy() < 2000) {
+			return STATE.LOW_ENERGY;
+		}else{
+			if (ship.getResources().getTotal() > 500) {
+				return STATE.FULL_LOAD;
+			}else{
+				return STATE.SEEK_RESOURCE;
+			}	
+		}
+	}
+	
+	public AbstractObject getActionObject(Toroidal2DPhysics space, Ship ship){
+		AbstractObject newAction = null;
+		
+		switch(getState(space, ship)){
+			case LOW_ENERGY:
+				Beacon beacon = pickNearestBeacon(space, ship);
+				
+				// if there is no beacon, then just skip a turn
+				if (beacon == null) {
+					newAction = null;
+				} else {
+					newAction = beacon;
+				}
+				aimingForBase.put(ship.getId(), false);
+				
+			break;
+			case FULL_LOAD:
+				Base base = findNearestBase(space, ship);
+				newAction = base;
+				aimingForBase.put(ship.getId(), true);
+			break;
+			case SEEK_RESOURCE:
+				if (ship.getResources().getTotal() == 0 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
+					aimingForBase.put(ship.getId(), false);
+				}
+				
+				aimingForBase.put(ship.getId(), false);
+				Asteroid asteroid = pickHighestValueFreeAsteroid(space, ship);
+
+				if (asteroid == null) {
+					// there is no asteroid available so collect a beacon
+					beacon = pickNearestBeacon(space, ship);
+					// if there is no beacon, then just skip a turn
+					if (beacon == null) {
+						newAction = null;
+					} else {
+						newAction = asteroid;
+					}
+				} else {
+					asteroidToShipMap.put(asteroid.getId(), ship);
+					newAction = asteroid;
+				}
+			break;
+		}
+	
 		return newAction;
 	}
-
-	private AbstractObject getActionObject(Toroidal2DPhysics space, Ship ship) {
-		AbstractAction current = ship.getCurrentAction();
-		Position currentPosition = ship.getPosition();
-
-		// aim for a beacon if there isn't enough energy
-		if (ship.getEnergy() < 2000) {
-			Beacon beacon = pickNearestBeacon(space, ship);
-			aimingForBase.put(ship.getId(), false);
-			return beacon;
-		}
-
-		// if the ship has enough resourcesAvailable, take it back to base
-		if (ship.getResources().getTotal() > 500) {
-			Base base = findNearestBase(space, ship);
-			aimingForBase.put(ship.getId(), true);
-			return base;
-		}
-
-		// did we bounce off the base?
-		if (ship.getResources().getTotal() == 0 && ship.getEnergy() > 2000 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
-			current = null;
-			aimingForBase.put(ship.getId(), false);
-		}
-
-		// otherwise aim for the asteroid
-		aimingForBase.put(ship.getId(), false);
-		Asteroid asteroid = pickHighestValueFreeAsteroid(space, ship);
-
-		/*if (asteroid == null) {
-			// there is no asteroid available so collect a beacon
-			Beacon beacon = pickNearestBeacon(space, ship);
-			// if there is no beacon, then just skip a turn
-			if (beacon == null) {
-				newAction = new DoNothingAction();
-			} else {
-				newAction = new MoveToObjectAction(space, currentPosition, beacon);
-			}
-		} else {
-			asteroidToShipMap.put(asteroid.getId(), ship);
-			newAction = new MoveToObjectAction(space, currentPosition, asteroid);
-		}*/
-		if (asteroid != null) {
-			asteroidToShipMap.put(asteroid.getId(), ship);
-		}
-		
-		return asteroid;
 	
-//		if (ship.getEnergy() < weights[0]) {
-//			Asteroid asteroid = getBestAsteroid(ship);
-//			if (asteroid != null && getCost(asteroid, ship) < weights[1]) {
-//				return asteroid;
-//			}
-//			Base base = getBestBase(ship);
-//			Beacon beacon = getBestBeacon(ship);
-//			if (beacon != null && base != null && getCost(beacon, ship) < getCost(base, ship)) return beacon;
-//			else {
-//				aimingForBase.put(ship.getId(), true);
-//				return base;
-//			}
-//		}else{
-//			Base base = getBestDropOffBase(ship);
-//			if (ship.getResources().getTotal() > weights[2] && base != null && getCostDropOffResources(base, ship) < weights[3]) {
-//				aimingForBase.put(ship.getId(), true);
-//				return base;
-//
-//			}else{
-//				return getBestAsteroid(ship);
-//			}	
-//		}
-	}
-	
-	private Beacon getBestBeacon(Ship ship) {
-		HashSet<Beacon> Beacons = (HashSet<Beacon>) space.getBeacons();
-		Beacon result = null;
-		double lowestCost = Double.MAX_VALUE;
-		for (Beacon beacon : Beacons) {
-			double cost = getCost(beacon, ship);
-			if (cost < lowestCost) {
-				lowestCost = cost;
-				result = beacon;
-			}
-		}
-		return result;
-	}
-
-	private Base getBestDropOffBase(Ship ship) {
-		HashSet<Base> Bases = (HashSet<Base>) space.getBases();
-		Base result = null;
-		double lowestCost = Double.MAX_VALUE;
-		for (Base base : Bases) {
-			if (base.getTeamName() != team.getTeamName()) continue;
-			double cost = getCostDropOffResources(base, ship);
-			if (cost < lowestCost) {
-				lowestCost = cost;
-				result = base;
-			}
-		}
-		return result;
-	}
-
-	private Base getBestBase(Ship ship) {
-		HashSet<Base> Bases = (HashSet<Base>) space.getBases();
-		Base result = null;
-		double lowestCost = Double.MAX_VALUE;
-		for (Base base : Bases) {
-			if (base.getTeamName() != team.getTeamName()) continue;
-			double cost = getCost(base, ship);
-			if (cost < lowestCost) {
-				lowestCost = cost;
-				result = base;
-			}
-		}
-		return result;
-	}
-
-	private Asteroid getBestAsteroid(Ship ship) {
-		HashSet<Asteroid> asteroids = (HashSet<Asteroid>) space.getAsteroids();
-		Asteroid result = null;
-		double lowestCost = Double.MAX_VALUE;
-		for (Asteroid asteroid : asteroids) {
-			if (!asteroid.isMineable()) continue;
-			double cost = getCost(asteroid, ship);
-			if (cost < lowestCost) {
-				lowestCost = cost;
-				result = asteroid;
-			}
-		}
-		return result;
-	}
-
-	private double getCostDropOffResources(Base base, Ship ship) {
-		return weights [6] * space.findShortestDistance(base.getPosition(), ship.getPosition())
-				+ weights[8] * momentumDetriment(base, ship);
-	}
-
-	private double getCost(AbstractObject object, Ship ship) {
-		HashSet<Asteroid> asteroids = getMineableAsteroidsAround(object);
-		int totalResourcesAround = sumResources(asteroids);
-		int asteroidsAround = asteroids.size();
-		
-		if (object instanceof Asteroid) {
-			Asteroid asteroid = (Asteroid) object;
-			return -1 * weights[4] * totalResourcesAround
-					+ weights[5] * asteroidsAround
-					+ weights[6] * space.findShortestDistance(ship.getPosition(), asteroid.getPosition())
-					//Scaled by 8 by expected value
-					- weights[7] * 8 * asteroid.getResources().getMass()
-					+ weights[8] * momentumDetriment(object, ship);
-		} else {
-			double energy = 0;
-			if (object instanceof Base) energy = ((Base) object).getEnergy();
-			else if (object instanceof Beacon) energy = Beacon.BEACON_ENERGY_BOOST;
-
-			return -1 * weights[4] * totalResourcesAround
-					+ weights[5] * asteroidsAround
-					+ weights[6] * space.findShortestDistance(ship.getPosition(), object.getPosition())
-					- weights[7] * energy
-					+ weights[8] * momentumDetriment(object, ship);
-		}
-	}
-
-	private double momentumDetriment(AbstractObject object, Ship ship) {
-		Vector2D displacement = space.findShortestDistanceVector(ship.getPosition(), object.getPosition());
-		Vector2D velocity = ship.getPosition().getTranslationalVelocity();
-		
-		return velocity.getMagnitude() * velocity.angleBetween(displacement);
-	}
-
-	private int sumResources(HashSet<Asteroid> asteroids) {
-		int result = 0;
-		for (Asteroid asteroid : asteroids) {
-			result += asteroid.getMass();
-		}
-		return result;
-	}
-
-	private HashSet<Asteroid> getMineableAsteroidsAround(AbstractObject object) {
-		int radius = 200;
-		Position p = object.getPosition();
-		HashSet<Asteroid> asteroids = (HashSet<Asteroid>) space.getAsteroids();
-		HashSet<Asteroid> result = new HashSet<Asteroid>();
-		for (Asteroid asteroid : asteroids) {
-			if (!asteroid.isMineable() || space.findShortestDistance(p, asteroid.getPosition()) > radius) continue;
-			result.add(asteroid);
-		}
-		return result;
-	}	
 	
 	private AbstractAction getNextPlannedAction(Position shipPosition) {
 		Node nextNode = plannedPoints.removeFirst();
@@ -336,11 +281,10 @@ public class KnowledgeRepresentation {
 			else
 			{
 				System.err.println("Last node in path was not a goal");
-				return new DoNothingAction();
 			}
 		}
 		
-		return new BetterMovement(space, shipPosition, nextNode.position);
+		return new BetterMovement(space, shipPosition, nextNode.position, 5);
 	}
 	
 	/**
@@ -437,11 +381,5 @@ public class KnowledgeRepresentation {
 		}
 
 		return closestBeacon;
-	}
-
-	public void clear() {
-		if (plannedPoints != null) plannedPoints.clear();
-		if (plannedPath != null) plannedPath.clear();
-		goalNode = null;
 	}
 }

@@ -41,8 +41,6 @@ public class GrahClient extends TeamClient {
 	 */
 	private KnowledgeRepresentation model;
 	
-	private int currentSteps;
-	
 	/**
 	 * Initializes the client
 	 */
@@ -56,8 +54,6 @@ public class GrahClient extends TeamClient {
 	 */
 	@Override
 	public void shutDown(Toroidal2DPhysics space) {
-		// TODO Auto-generated method stub
-		model.clear();
 		model = null;
 	}
 
@@ -73,26 +69,15 @@ public class GrahClient extends TeamClient {
 			if (actionable instanceof Ship) {
 				Ship ship = (Ship) actionable;
 				
-				if (!ship.isAlive()) model.clear();
-				else {
-					AbstractAction current = ship.getCurrentAction();
-					AbstractAction action;
-					if (current == null || currentSteps > 20) {
-						action = model.getAction(ship, space, currentSteps);
-						currentSteps = 0;
-					}
-					else {
-						action = current;
-					}
-					actions.put(ship.getId(), action);
-				}
+				AbstractAction action = model.getAction(ship, space);
+				
+				actions.put(ship.getId(), action);
 				
 			} else {
 				// it is a base.  Heuristically decide when to use the shield (TODO)
 				actions.put(actionable.getId(), new DoNothingAction());
 			}
 		} 
-		currentSteps++;
 		return actions;
 	}
 
