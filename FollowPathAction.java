@@ -59,7 +59,7 @@ public class FollowPathAction {
 				DoNothingAction doNothing = new DoNothingAction();
 				lastCommand = doNothing;
 			} else {
-				MoveAction command = new MoveAction(state, ship.getPosition(), path[currentVertex].getPosition());
+				MoveAction command = new BetterMovement(state, ship.getPosition(), path[currentVertex].getPosition());
 				lastCommand = command;
 			}
 		}

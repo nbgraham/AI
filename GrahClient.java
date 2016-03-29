@@ -41,6 +41,8 @@ public class GrahClient extends TeamClient {
 	 */
 	private KnowledgeRepresentation model;
 	
+	private int currentSteps;
+	
 	/**
 	 * Initializes the client
 	 */
@@ -73,7 +75,15 @@ public class GrahClient extends TeamClient {
 				
 				if (!ship.isAlive()) model.clear();
 				else {
-					AbstractAction action = model.getAction(ship, space);				
+					AbstractAction current = ship.getCurrentAction();
+					AbstractAction action;
+					if (current == null || currentSteps > 20) {
+						action = model.getAction(ship, space, currentSteps);
+						currentSteps = 0;
+					}
+					else {
+						action = current;
+					}
 					actions.put(ship.getId(), action);
 				}
 				
@@ -82,7 +92,7 @@ public class GrahClient extends TeamClient {
 				actions.put(actionable.getId(), new DoNothingAction());
 			}
 		} 
-		
+		currentSteps++;
 		return actions;
 	}
 
