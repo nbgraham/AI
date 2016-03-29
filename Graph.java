@@ -1,196 +1,246 @@
 package grah8384;
 
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.PriorityQueue;
-import java.util.Random;
 import java.util.Set;
+import java.util.Vector;
 
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
 
-import spacesettlers.actions.MoveAction;
-import spacesettlers.objects.AbstractObject;
-import spacesettlers.objects.Ship;
+import spacesettlers.graphics.SpacewarGraphics;
 import spacesettlers.simulator.Toroidal2DPhysics;
-import spacesettlers.utilities.Position;
-import spacesettlers.utilities.Vector2D;
 
 public class Graph {
+	private Vector <Vertex> vertices;
+	private Vector <Edge> edges;
+	private Vector <Vertex>goals;
+	private Vertex start;
+	private static final int maxSearchSteps = 100;
 
-	HashSet<Node> graph;
-	Node start;
-	Node goal;
-	Ship ship;
-	AbstractObject goalObject;
-	
-	Toroidal2DPhysics space;
-	
-	public Graph(Toroidal2DPhysics space, Ship ship, AbstractObject goal, int sampleSize){
-		this.graph = new HashSet<Node>();
-		this.space = space;
-		this.ship = ship;
-		this.goalObject = goal;
-		
-		double dist = space.findShortestDistance(ship.getPosition(), goal.getPosition());
-		this.goal = new GoalNode(space, goal, getPredictedPosition(goal.getPosition(), dist), dist);
-		this.start = new Node(ship.getPosition(), space.findShortestDistance(ship.getPosition(), this.goal.getPosition()), 0);
-	
-		buildGraph(sampleSize);
-	}
-	
-	public void nullify(){
-		if(this.start != null){
-			this.start.nullify();
-			this.start = null;
-		}
-		if(this.goal != null){
-			this.goal.nullify();
-			this.goal = null;
-		}
-		if(this.ship != null){
-			this.ship = null;
-		}
-		if(this.goalObject != null){
-			this.goalObject = null;
-		}
-		if(this.space != null){
-			this.space = null;
-		}
-		if(this.graph != null){
-			for(Node n : this.graph){
-				if(n != null){
-					n.nullify();
-				}
-			}
-			this.graph = null;
-		}
-	}
-	
-	private static Position getPredictedPosition(Position position, double dist) {
-		Position predictedPosition = new Position(position.getX() + position.getTranslationalVelocity().getXValue() * dist * 0.03, position.getY() + position.getTranslationalVelocity().getYValue() * dist * 0.03);
-		return predictedPosition;
+	public Graph() {
+		vertices = new Vector<Vertex>();
+		edges = new Vector<Edge>();
+		goals = new Vector<Vertex>();
 	}
 
-	private void buildGraph(int sampleSize){
-		//set of avoided objects
-		Set<AbstractObject> obstructions = new HashSet<AbstractObject>();
-		//add objects as obstructions
-		obstructions.addAll(Methods.getNonMineableAsteroids(space));
-		obstructions.addAll(space.getBases());
-		obstructions.addAll(space.getShips());
-		
-		obstructions.remove(ship);
-		obstructions.remove(goalObject);
+	public void reset() {
+		vertices.clear();
+		edges.clear();
+		goals.clear();
+	}
 
-		//random seed for point generation
-		Random seed = new Random(System.currentTimeMillis());
-		//list of sampled nodes
-		graph.add(this.start);
-		graph.add(this.goal);
-		
-		Vector2D shortestVector = space.findShortestDistanceVector(start.position, goal.position);
-		Position oneThird = add(start.position, shortestVector.multiply(.33));
-		Position twoThirds = add(start.position, shortestVector.multiply(.66));
-		
-		if (space.isPathClearOfObstructions(start.getPosition(), goal.getPosition(), obstructions, Ship.SHIP_RADIUS))
-		{
-			start.addNeighbor(goal);
-			goal.addNeighbor(start);
+	/**
+	 * Adds the vertex to the current list.  If it is a goal vertex, 
+	 * adds it to the goal list as well.
+	 * @param v
+	 */
+	public void addVertex(Vertex v) {
+		vertices.add(v);
+
+		if (v.isGoal()) {
+			goals.add(v);
 		}
-		else
-		{
-			for(int i=0; i < sampleSize; i++){
-				
-				//get a random point
-				Position samplePosition;
-				if (i < sampleSize/2) samplePosition = space.getRandomFreeLocationInRegion(seed, Ship.SHIP_RADIUS, (int) oneThird.getX(), (int) twoThirds.getY(), shortestVector.getMagnitude()*.66);
-				else samplePosition = space.getRandomFreeLocationInRegion(seed, Ship.SHIP_RADIUS, (int) twoThirds.getX(), (int) twoThirds.getY(), shortestVector.getMagnitude()*.66);
-				//construct a node from the random point
-				Node nodeI = new Node(samplePosition);
-				
-				for(Node nodeJ : graph){
-					if ( nodeI.position == nodeJ.position) continue;
-					//if connected
-					if(space.isPathClearOfObstructions(nodeI.getPosition(), nodeJ.getPosition(), obstructions, Ship.SHIP_RADIUS)){
-						//make nodes neighbors
-						nodeI.addNeighbor(nodeJ);
-						nodeJ.addNeighbor(nodeI);
-					}
-				}
-				
-				this.graph.add(nodeI);
+
+		if (v.isStart()) {
+			start = v;
+		}
+	}
+
+	public void addEdge(Edge e) {
+		edges.add(e);
+	}
+
+	public Vector<Vertex> getVertices() {
+		return vertices;
+	}
+
+	/**
+	 * Get the graphics objects for the whole graph (with solution colored)
+	 * @return
+	 */
+	public Set<SpacewarGraphics> getAllGraphics() {
+		Set<SpacewarGraphics> shadows = new HashSet<SpacewarGraphics>();
+
+		for (int v = 0; v < vertices.size(); v++) {
+			SpacewarGraphics shadow = ((Vertex)vertices.get(v)).getGraphic();
+			shadows.add(shadow);
+		}
+
+		for (int e = 0; e < edges.size(); e++) {
+			SpacewarGraphics shadow = ((Edge)edges.get(e)).getGraphic();
+			shadows.add(shadow);
+		}
+
+		return shadows;
+	}
+
+	/**
+	 * Only return the graphics objects for the solution path
+	 * @return
+	 */
+	public Set<SpacewarGraphics> getSolutionPathGraphics() {
+		Set<SpacewarGraphics> graphics = new HashSet<SpacewarGraphics>();
+
+		for (Vertex vertex : vertices) {
+			if (vertex.isSolution()) {
+				SpacewarGraphics graphic = vertex.getGraphic();
+				graphics.add(graphic);
 			}
 		}
-	}
-	
-	private Position add(Position position, Vector2D vector) {
-		return new Position(position.getX() + vector.getXValue(), position.getY() + vector.getYValue());
-	}
 
-	public LinkedList<Node> getPath(){
-		Node currentNode;
+		for (Edge edge : edges) {
+			if (edge.isSolution) {
+				SpacewarGraphics graphic = edge.getGraphic();
+				graphics.add(graphic);
+			}
 
-		//System.out.println("Searching...");
-		if (start.neighbors.contains(goal))
-		{
-			goal.setParent(start);
-			//System.out.println("Goal found.");
 		}
-		else
-		{
-			HashSet<Node> visited = new HashSet<Node>();
-			PriorityQueue<Node> q = new PriorityQueue<Node>();
-			q.add(this.start);
-			visited.add(this.start);
-						
-			while(!q.isEmpty()){			
-				currentNode = q.poll();
-				visited.add(currentNode);
+
+		return graphics;
+	}
+
 	
-				for (Node n : currentNode.neighbors){
-					if (!visited.contains(n))
-					{
-						n.setHeuristic(space.findShortestDistance(n.position, goal.position));
-						//If the path cost is better, then set the parent (change the path to a better path)
-						if (n.setPathCost(currentNode.bestPathCost + getCost(currentNode,n))) n.setParent(currentNode);
-						if (n.position.equals(goal.position)) {
-							goal.setParent(currentNode);
-							//System.out.println("Goal found.");
-							q.clear();
-							break;
-						}
-						if(!q.contains(n))q.add(n);
-					}
+	private void resetGraphForSearch() {
+		for (int v = 0; v < vertices.size(); v++) {
+			vertices.get(v).setExpanded(false);
+			vertices.get(v).setPathCost(0);
+		}
+	}
+
+	/**
+	 * find an optimal path from the start to the goal using astar
+	 * @return
+	 */
+	public Vertex[] findAStarPath(Toroidal2DPhysics state) {
+		double minDist, dist;
+
+		// initialize the graph
+		resetGraphForSearch();
+
+		// setup the H distances.  G is already stored in the edges
+		for (int v = 0; v < vertices.size(); v++) {
+			minDist = Double.MAX_VALUE;
+			Vertex vertex = vertices.get(v);
+			for (int g = 0; g < goals.size(); g++) {
+				dist = state.findShortestDistance(vertex.getPosition(), goals.get(g).getPosition());
+				if (dist < minDist) {
+					minDist = dist;
 				}
 			}
+			vertex.setHeuristicCostToGoal(minDist);
 		}
-		
-		LinkedList<Node> result = new LinkedList<Node>();
-		currentNode = goal;
-		if (currentNode.parent == null){
-			//System.out.println("No path.");
-			return null; //Failure
+
+		// now search for a goal using AStar.  The priority queue uses the search tree nodes
+		// because of Astar's ability to jump around in the search.  This is a clean way to
+		// both know where you are in the search tree and to know what the next node's priority is
+		PriorityQueue <DefaultMutableTreeNode>queue = 
+			new PriorityQueue<DefaultMutableTreeNode>(edges.size(), new TreeNodeComparator());
+
+		// start the search with the children of the start node.  
+		DefaultMutableTreeNode searchTree = new DefaultMutableTreeNode(new SearchNode(start, null));
+		start.setExpanded(true);
+		visitSuccessors(queue, searchTree, start);
+
+		// initilize the loop
+		boolean goalFound = false;
+		int steps = 0;
+		DefaultMutableTreeNode goalNode = null;
+
+		// search until we find a goal node, reach a maximum number of steps, or run out of 
+		// nodes to search
+		while (!goalFound && steps < maxSearchSteps && !queue.isEmpty()) {
+			// get the next node from the queue
+			DefaultMutableTreeNode currentNode = queue.poll();
+
+			// get the vertex object
+			SearchNode node = (SearchNode) currentNode.getUserObject();
+			Vertex nextVertex = node.getVertex();
+			while (nextVertex.isExpanded()) {
+				if (queue.isEmpty()) {
+					// we ran out of objects before finding the goal, return failure
+					return null;
+				}
+				
+				currentNode = queue.poll();
+
+				// get the vertex object
+				node = (SearchNode) currentNode.getUserObject();
+				nextVertex = node.getVertex();
+			}
+
+			// if it is a goal, quit
+			if (nextVertex.isGoal()) {
+				goalFound = true;
+				goalNode = currentNode;
+				break;
+			} 
+
+			// otherwise, mark it as expanded and visit it's successors
+			nextVertex.setExpanded(true);
+			visitSuccessors(queue, currentNode, nextVertex);
+
+			steps++;
 		}
-		while(currentNode.parent != null)
-		{
-			result.addFirst(currentNode);
-			currentNode = currentNode.parent;
+
+		// find the solution path for the agent to follow
+		// and mark it as a solution (so it changes color)
+		if (goalFound) {
+			TreeNode[] path = goalNode.getPath();
+			Vertex[] solutionPath = new Vertex[path.length];
+			
+			//System.out.println("Path is length " + path.length);
+
+			for (int t = 0; t < path.length; t++) {
+				TreeNode node = path[t];
+				
+				SearchNode searchNode = (SearchNode) ((DefaultMutableTreeNode) node).getUserObject();
+				searchNode.getVertex().setSolution();
+				solutionPath[t] = searchNode.getVertex();
+
+				if (searchNode.getEdge() != null) {
+					searchNode.getEdge().setSolution();
+				} 
+			}
+			return solutionPath;
+
+		} else {
+			return null;
 		}
-		
-		
-		
-		return result;
 	}
-	
-	private int getCost(Node initialNode, Node finalNode)
-	{
-		return 200;
-		//return (int) space.findShortestDistance(initialNode.position, finalNode.position)*2;
-	}
-	
-	public void print(){
-		for(Node n : this.graph){
-			System.out.println("X: "+n.getPosition().getX()+" Y: "+n.getPosition().getY()+" Neighbors: "+n.getNeighbors().size());
+
+	/**
+	 * Visits all successors of the listed vertex, adds all non-expanded ones 
+	 * to the queue and saves them in the search tree
+	 */
+	private void visitSuccessors(PriorityQueue<DefaultMutableTreeNode> queue, 
+			DefaultMutableTreeNode tree, Vertex vertex) {
+		for (Edge edge : vertex.getEdges()) {
+			Vertex child = edge.getVertex1();
+			if (!child.isExpanded()) {
+				child.setPathCost(vertex.getPathCost() + edge.getPathCost());
+				child.updateF();
+
+				DefaultMutableTreeNode node = new DefaultMutableTreeNode(new SearchNode(child, edge));
+				tree.add(node);
+				queue.add(node);
+			}
+
+			// edges are bi-directional
+			child = edge.getVertex2();
+			if (!child.isExpanded()) {
+				child.setPathCost(vertex.getPathCost() + edge.getPathCost());
+				child.updateF();
+
+				DefaultMutableTreeNode node = new DefaultMutableTreeNode(new SearchNode(child, edge));
+				tree.add(node);
+				queue.add(node);
+			}
 		}
 	}
+
+	public Vertex getStart() {
+		return start;
+	}
+
 }
