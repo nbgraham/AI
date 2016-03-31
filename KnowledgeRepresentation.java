@@ -57,7 +57,7 @@ public class KnowledgeRepresentation {
 	 * List of planned out actions
 	 * Linked list because we only really need to add to the end and access the head
 	 */
-	protected LinkedList<Node> plannedPoints;
+	protected HashMap<UUID, LinkedList<Node>> plannedPoints;
 	
 	/**
 	 * Counter to re-plan every ten time steps
@@ -74,9 +74,7 @@ public class KnowledgeRepresentation {
 	final int DISTANCE_COEFFICIENT = -1;
 	
 	Graph graph = null;
-	
-	protected LinkedList<Node> plannedPath;
-	
+		
 	protected GoalNode goalNode = null;
 	
 	/**
@@ -92,7 +90,7 @@ public class KnowledgeRepresentation {
 		aimingForBase = new HashMap<UUID, Boolean>();
 		asteroidToShipMap = new HashMap<UUID, Ship>();
 		graphicsToAdd = new ArrayList<SpacewarGraphics>();
-		plannedPoints = new LinkedList<Node>();
+		plannedPoints = new HashMap<UUID, LinkedList<Node>>();
 		asteroidCollectorID = null;
 	}
 	
@@ -125,31 +123,16 @@ public class KnowledgeRepresentation {
 			}
 		}
 		
-		//Draw planned path
-				if (graph != null)
-				{
-					graphicsToAdd.add(new StarGraphics(3, new Color(255,0,0), graph.goal.position));
-					graphicsToAdd.add(new StarGraphics(3, new Color(0,255,0), graph.start.position));
-				}
-
-				if(plannedPath != null)
-				{
-					Node p = null;
-					for (Node n : plannedPath)
-					{
-						if (p != null)
-						{
-							graphicsToAdd.add(new LineGraphics(p.position, n.position, space.findShortestDistanceVector(p.position, n.position)));
-						}
-						p = n;
-					}
-				}
-		
-				
+		//Draw start and goal
+		if (graph != null)
+		{
+			graphicsToAdd.add(new StarGraphics(3, new Color(255,0,0), graph.goal.position));
+			graphicsToAdd.add(new StarGraphics(3, new Color(0,255,0), graph.start.position));
+		}		
 		
 		if (goalNode != null && goalNode.isGone()) {
 			//System.out.println("Goal gone, replan");
-			if(plannedPoints !=null)  plannedPoints.clear();
+			if(plannedPoints.get(ship.getId()) !=null)  plannedPoints.get(ship.getId()).clear();
 			ship.setCurrentAction(null);
 			return null;
 		}
@@ -168,24 +151,19 @@ public class KnowledgeRepresentation {
 						this.graph.nullify();
 						this.graph = null;
 					}
-					if(plannedPoints != null){ 
-						plannedPoints.clear();
-						plannedPoints = null;
-					}
 					
 					this.graph = new Graph(space, ship, goal, 50);
 					
-					plannedPoints = graph.getPath();
+					LinkedList<Node> path = graph.getPath();
+					plannedPoints.put(ship.getId(), path);
 
-					if (plannedPoints != null)
-					{
-						//plannedPath = new LinkedList<Node>(plannedPoints); 
-						
-						Node last = plannedPoints.getLast();
+					if (path!= null)
+					{						
+						Node last = path.getLast();
 						if (last instanceof GoalNode) goalNode = (GoalNode) last;
 						else System.err.println("Last node is not a goal node");
 					
-						return getNextPlannedAction(ship.getPosition());
+						return getNextPlannedAction(ship);
 					}
 					else
 					{
@@ -195,8 +173,8 @@ public class KnowledgeRepresentation {
 				
 			}
 			
-			if (plannedPoints == null || plannedPoints.isEmpty()) return new DoNothingAction();
-			else return getNextPlannedAction(ship.getPosition());
+			if (plannedPoints.get(ship.getId()) == null || plannedPoints.get(ship.getId()).isEmpty()) return new DoNothingAction();
+			else return getNextPlannedAction(ship);
 		}
 		else
 		{
@@ -269,8 +247,9 @@ public class KnowledgeRepresentation {
 	}
 	
 	
-	private AbstractAction getNextPlannedAction(Position shipPosition) {
-		Node nextNode = plannedPoints.removeFirst();
+	private AbstractAction getNextPlannedAction(Ship ship) {
+		Position shipPosition = ship.getPosition();
+		Node nextNode = plannedPoints.get(ship.getId()).removeFirst();
 
 		if (plannedPoints.isEmpty())
 		{
