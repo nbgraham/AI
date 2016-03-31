@@ -46,7 +46,7 @@ public class Graph {
 		//set of avoided objects
 		Set<AbstractObject> obstructions = new HashSet<AbstractObject>();
 		//add objects as obstructions
-		obstructions.addAll(Methods.getNonMineableAsteroids(space));
+		obstructions.addAll(space.getAsteroids());
 		obstructions.addAll(space.getBases());
 		obstructions.addAll(space.getShips());
 		
