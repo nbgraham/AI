@@ -69,6 +69,9 @@ public class GrahClient extends TeamClient {
 			if (actionable instanceof Ship) {
 				Ship ship = (Ship) actionable;
 				
+				//Delete plan if respawning
+				if (!ship.isAlive()) model.clearPlan(ship);
+				
 				AbstractAction action = model.getAction(ship, space);
 				
 				actions.put(ship.getId(), action);
