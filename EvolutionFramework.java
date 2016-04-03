@@ -24,12 +24,13 @@ public class EvolutionFramework {
 			//Need to play with mean and sd
 			double resourcesAroundWeight = ((rand.nextGaussian() * 10000) + 10000);
 			double asteroidsAroundWeight = ((rand.nextGaussian() * 10000) + 10000);
-			double distanceWeight = ((rand.nextGaussian() * 10000) + 10000); 
+			double distanceFromShipWeight = ((rand.nextGaussian() * 10000) + 10000);
+			double distanceFromHomeWeight = ((rand.nextGaussian() * 10000) + 10000);
 			double resourceOrEnergyWeight = ((rand.nextGaussian() * 10000) + 10000);
 			double momentumDetrimentWeight = ((rand.nextGaussian() * 10000) + 10000);		
 			
 			double[] current = {shipEnergyBoundary, asteroidCostBoundary, resourceBoundary, homeCostBoundary, 
-			                    resourcesAroundWeight, asteroidsAroundWeight, distanceWeight, resourceOrEnergyWeight, momentumDetrimentWeight};
+			                    resourcesAroundWeight, asteroidsAroundWeight, distanceFromShipWeight, distanceFromHomeWeight, resourceOrEnergyWeight, momentumDetrimentWeight};
 			
 			population.add(new Gene(current));
 		}
