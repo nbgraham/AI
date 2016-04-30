@@ -87,68 +87,6 @@ public class LeastActionAgent extends TeamClient {
 		}
 	}
 	
-	private AbstractObject getMinObject(Toroidal2DPhysics space, Ship ship){
-		double shipEnergy = ship.getEnergy();
-		double shipResources = ship.getResources().getTotal();
-		
-	
-		Base bestBase = findBestBase(space, ship);
-		Beacon bestBeacon = findBestBeacon(space, ship);
-		Asteroid bestAsteroid = findBestAsteroid(space, ship);
-		
-		int energyToBase = BetterMovement.getEnergyCost(space, ship, bestBase.getPosition());
-		int energyToBeacon = BetterMovement.getEnergyCost(space, ship, bestBeacon.getPosition());
-		int energyToAsteroid = BetterMovement.getEnergyCost(space, ship, bestAsteroid.getPosition());
-		
-		if(shipResources > 3000){
-			if(energyToBase > shipEnergy){
-				return bestBeacon;
-			}else{
-				return bestBase;
-			}
-		}else{
-			if(shipResources < 500){
-				if(energyToAsteroid > shipEnergy){
-					return bestBeacon;
-				}else{
-					return bestAsteroid;
-				}
-			}else{
-				if(shipEnergy-energyToBase < 200){
-					return bestBase;
-				}
-				if(Ship.SHIP_MAX_ENERGY-shipEnergy < Beacon.BEACON_ENERGY_BOOST){
-					return bestAsteroid;
-				}
-			}
-		}
-		
-		
-		switch(getMinIndex(energyToBase, energyToBeacon, energyToAsteroid)){
-			case 0:
-				return bestBase;
-			case 1:
-				return bestBeacon;
-			case 2:
-				return bestAsteroid;
-			default:
-				return null;
-		}
-	}
-	
-	private int getMinIndex(int... i){
-		int lowestValue = Integer.MAX_VALUE;
-		int lowestIndex = 0;
-		
-		for(int k=0; k<i.length; k+=1){
-			if(i[k]<lowestValue){
-				lowestValue = i[k];
-				lowestIndex = k;
-			}
-		}
-		return lowestIndex;
-	}
-	
 	/**
 	 * Gets the action for the asteroid collecting ship
 	 * @param space
@@ -164,23 +102,6 @@ public class LeastActionAgent extends TeamClient {
 		if (space.getCurrentTimestep() == 150) {
 			Planning.search(space, ship);
 		}
-		
-		/*AbstractObject nextTarget = getMinObject(space, ship);
-		if(nextTarget != null){
-			newAction = new BetterObjectMovement(space, currentPosition, nextTarget);
-			graphicsToAdd.add(new LineGraphics(
-					ship.getPosition(), 
-					nextTarget.getPosition(), 
-					space.findShortestDistanceVector(
-							ship.getPosition(),  
-							nextTarget.getPosition()
-					)
-			));
-			return newAction;
-		}else{
-			return ship.getCurrentAction();
-		}
-		*/
 		
 		switch(getState(space,ship)){
 			case SEEK_ENERGY:
