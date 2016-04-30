@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -44,6 +45,8 @@ public class LeastActionAgent extends TeamClient {
 	HashMap <UUID, Ship> asteroidToShipMap;
 	HashMap <UUID, Boolean> aimingForBase;
 	ArrayList<SpacewarGraphics> graphicsToAdd;
+	
+	LinkedList<Node> plan = null;
 	
 
 
@@ -99,8 +102,26 @@ public class LeastActionAgent extends TeamClient {
 		Position currentPosition = ship.getPosition();
 		AbstractAction newAction = null;
 		
-		if (space.getCurrentTimestep() == 150) {
-			Planning.search(space, ship);
+		if (space.getCurrentTimestep() > 0 && space.getCurrentTimestep() % 100 == 0) {
+			plan = Planning.search(space, ship);
+		}
+		if (space.getCurrentTimestep() >= 100) {
+			Position prev = null;
+			Position next = null;
+			for (Node n : plan) {
+				next = n.state.at.get(ship.getId());
+				if (prev != null) {
+					graphicsToAdd.add(new LineGraphics(
+							prev, 
+							next, 
+							space.findShortestDistanceVector(
+									prev,  
+									next
+							)
+					));
+				}
+				prev = next;
+			}
 		}
 		
 		switch(getState(space,ship)){

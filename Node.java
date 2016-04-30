@@ -63,6 +63,7 @@ public class Node implements Comparable<Node> {
 	}
 	
 	public double evaluate() {
+		if (pathCost == 0) return 0;
 		return resourcesCollected/pathCost;
 	}
 
@@ -85,6 +86,9 @@ public class Node implements Comparable<Node> {
 		while (current.action != null) {
 			result.addFirst(current);
 			current = current.parent;
+		}
+		if (current != null) {
+			result.addFirst(current);
 		}
 		return result;
 	}

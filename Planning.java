@@ -41,7 +41,7 @@ public class Planning {
 		}
 	}
 	
-	public static void search(Toroidal2DPhysics space, Ship ship) {
+	public static LinkedList<Node> search(Toroidal2DPhysics space, Ship ship) {
 		Node head = new Node(new StateRepresentation(space, ship.getTeamName()), ship);
 		LinkedList<Node> path;
 		
@@ -64,6 +64,7 @@ public class Planning {
 		}
 		
 		System.out.println(path);
+		return path;
 	}
 
 }
