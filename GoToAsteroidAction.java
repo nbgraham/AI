@@ -3,42 +3,30 @@ package grah8384;
 import spacesettlers.objects.Asteroid;
 import spacesettlers.objects.Ship;
 
-public class GoToAsteroidAction {
-	Ship ship;
-	Asteroid asteroid;
+public class GoToAsteroidAction extends GoToAction {
 	
 	public GoToAsteroidAction(Ship ship, Asteroid asteroid) {
 		this.ship = ship;
-		this.asteroid = asteroid;
-	}
-	
-	/**
-	 * Check that the action is applicable, given the state
-	 * @param state
-	 * @return
-	 */
-	public boolean isApplicable(StateRepresentation state) {
-		//If ship is not already at asteroid
-		if (state.at(ship.getId(), asteroid.getPosition())) {
-			return false;
-		}
-		//And ship has enough energy to make it to asteroid
-		if (BetterObjectMovement.getEnergyCost(state.space, ship, asteroid.getPosition()) > ship.getEnergy()) {
-			return false;
-		}
-		return true;
+		this.goal = asteroid;
 	}
 	
 	/**
 	 * Add effects of this action to the state
 	 * @param state
 	 */
-	public void effects(StateRepresentation state) {
+	public StateRepresentation effects(StateRepresentation state) {
+		StateRepresentation result = new StateRepresentation(state);
 		//Set ship location to where the asteroid is
-		state.setAt(ship.getId(), asteroid.getPosition());
+		result.setAt(ship.getId(), goal.getPosition());
 		//Get resources from asteroid
-		state.addResources(ship.getId(), asteroid.getResources());
+		result.addResources(ship.getId(), goal.getResources());
 		//Remove the asteroid from the state 
-		state.removeObject(asteroid);
+		result.removeObject(goal);
+		
+		return result;
+	}
+	
+	public int getResources() {
+		return goal.getResources().getMass();
 	}
 }

@@ -31,8 +31,17 @@ public class StateRepresentation {
 	 * @param space
 	 * @param team
 	 */
-	public StateRepresentation(Toroidal2DPhysics space, Team team) {
+	public StateRepresentation(Toroidal2DPhysics space, String teamName) {
 		this.space = space.deepClone();
+		
+		asteroids = new HashSet<Asteroid>();
+		ships = new HashSet<Ship>();
+		beacons = new HashSet<Beacon>();
+		bases = new HashSet<Base>();
+		
+		at = new HashMap<UUID, Position>();
+		resources = new HashMap<UUID, ResourcePile>();
+		energy = new HashMap<UUID, Double>();
 		
 		for (Asteroid a : space.getAsteroids()) {
 			if (!a.isMineable()) continue;
@@ -43,17 +52,29 @@ public class StateRepresentation {
 			beacons.add(b);
 			at.put(b.getId(), b.getPosition());
 		}
-		for (Ship s : team.getShips()) {
+		for (Ship s : space.getShips()) {
+			if (s.getTeamName() != teamName) continue;
 			ships.add(s);
 			at.put(s.getId(), s.getPosition());
 			resources.put(s.getId(), s.getResources());
 			energy.put(s.getId(), s.getEnergy());
 		}
 		for (Base b : space.getBases()) {
-			if (b.getTeamName() == team.getTeamName()) {
+			if (b.getTeamName() == teamName) {
 				bases.add(b);
 			}
 		}
+	}
+	
+	public StateRepresentation(StateRepresentation state) {
+		this.asteroids = new HashSet<Asteroid>(state.asteroids);
+		this.at = new HashMap<UUID, Position>(state.at);
+		this.bases = new HashSet<Base>(state.bases);
+		this.beacons = new HashSet<Beacon>(state.beacons);
+		this.energy = new HashMap<UUID, Double>(state.energy);
+		this.resources = new HashMap<UUID, ResourcePile>(state.resources);
+		this.ships = new HashSet<Ship>(state.ships);
+		this.space = state.space;
 	}
 	
 	/**

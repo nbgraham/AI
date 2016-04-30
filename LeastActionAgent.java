@@ -161,6 +161,10 @@ public class LeastActionAgent extends TeamClient {
 		Position currentPosition = ship.getPosition();
 		AbstractAction newAction = null;
 		
+		if (space.getCurrentTimestep() == 150) {
+			Planning.search(space, ship);
+		}
+		
 		/*AbstractObject nextTarget = getMinObject(space, ship);
 		if(nextTarget != null){
 			newAction = new BetterObjectMovement(space, currentPosition, nextTarget);
@@ -177,6 +181,7 @@ public class LeastActionAgent extends TeamClient {
 			return ship.getCurrentAction();
 		}
 		*/
+		
 		switch(getState(space,ship)){
 			case SEEK_ENERGY:
 				Beacon beacon = findBestBeacon(space, ship);
