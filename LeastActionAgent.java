@@ -57,6 +57,11 @@ public class LeastActionAgent extends TeamClient {
 	 */
 	public Map<UUID, AbstractAction> getMovementStart(Toroidal2DPhysics space,
 			Set<AbstractActionableObject> actionableObjects) {
+		
+		if (space.getCurrentTimestep() > 0 && space.getCurrentTimestep() % 50 == 0) {
+			needToPlan = true;
+		}
+		
 		HashMap<UUID, AbstractAction> actions = new HashMap<UUID, AbstractAction>();
 		
 		HashSet<Ship> ships = new HashSet<Ship>();
@@ -115,14 +120,14 @@ public class LeastActionAgent extends TeamClient {
 			Ship ship) {
 		AbstractAction current = ship.getCurrentAction();
 		Position currentPosition = ship.getPosition();
-		AbstractAction newAction = null;
 		
-		if (space.getCurrentTimestep() > 0 && space.getCurrentTimestep() % 100 == 0) {
-			needToPlan = true;
-		}
+		AbstractObject goal = null;
+
 		if (planner != null) {
 			LinkedList<Node> plan = planner.getPath(ship.getId());
 			if (plan != null) {
+				goal = space.getObjectById(plan.get(1).action.goal.getId());
+				
 				Position prev = null;
 				Position next = null;
 				for (Node n : plan) {
@@ -142,75 +147,54 @@ public class LeastActionAgent extends TeamClient {
 			}
 		}
 		
-		switch(getState(space,ship)){
-			case SEEK_ENERGY:
-				Beacon beacon = findBestBeacon(space, ship);
-				newAction = null;
-				// if there is no beacon, then just skip a turn
-				if (beacon == null) {
-					newAction = new DoNothingAction();
-				} else {
-					newAction = new BetterObjectMovement(space, currentPosition, beacon);
-					graphicsToAdd.add(new LineGraphics(
-							ship.getPosition(), 
-							beacon.getPosition(), 
-							space.findShortestDistanceVector(
-									ship.getPosition(),  
-									beacon.getPosition()
-							)
-					));
-				}
-				aimingForBase.put(ship.getId(), false);
-				return newAction;
-			
-			case SEEK_RESOURCE:
-				// did we bounce off the base?
-				if (ship.getResources().getTotal() == 0 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
-					current = null;
+		if (goal == null) {
+			switch(getState(space,ship)){
+				case SEEK_ENERGY:
+					goal = findBestBeacon(space, ship);
 					aimingForBase.put(ship.getId(), false);
-				}
-
-				// otherwise aim for the asteroid
-				if (current == null || current.isMovementFinished(space)) {
-					aimingForBase.put(ship.getId(), false);
-					Asteroid asteroid = findBestAsteroid(space, ship);
-					//graphicsToAdd.add(new StarGraphics(2, this.getTeamColor(), asteroid.getPosition()));
-					graphicsToAdd.add(new LineGraphics(
-										ship.getPosition(), 
-										asteroid.getPosition(), 
-										space.findShortestDistanceVector(
-												ship.getPosition(),  
-												asteroid.getPosition()
-												)
-										)
-					);
-					
-					newAction = null;
-					if (asteroid != null) {
-						asteroidToShipMap.put(asteroid.getId(), ship);
-						newAction = new BetterObjectMovement(space, currentPosition, asteroid);
+					break;
+				
+				case SEEK_RESOURCE:
+					// did we bounce off the base?
+					if (ship.getResources().getTotal() == 0 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
+						current = null;
+						aimingForBase.put(ship.getId(), false);
 					}
-					return newAction;
-				} 
-			
-			case SEEK_BASE:
-				Base base = findBestBase(space, ship);
-				newAction = new BetterObjectMovement(space, currentPosition, base);
-				graphicsToAdd.add(new LineGraphics(
-						ship.getPosition(), 
-						base.getPosition(), 
-						space.findShortestDistanceVector(
-								ship.getPosition(),  
-								base.getPosition()
-						)
-				));
-				aimingForBase.put(ship.getId(), true);
-				return newAction;
-			
-			default:
-				return ship.getCurrentAction();
+	
+					// otherwise aim for the asteroid
+					if (current == null || current.isMovementFinished(space)) {
+						aimingForBase.put(ship.getId(), false);
+						goal = findBestAsteroid(space, ship);
+						if (goal != null) {
+							asteroidToShipMap.put(goal.getId(), ship);
+						}
+					}
+					break;
+				
+				case SEEK_BASE:
+					goal = findBestBase(space, ship);
+					aimingForBase.put(ship.getId(), true);
+					break;
+	
+				
+				default:
+					return ship.getCurrentAction();
+			}
 		}
-	//*/
+		
+		if (goal == null){
+			return new DoNothingAction();
+		} else {
+			graphicsToAdd.add(new LineGraphics(
+					ship.getPosition(), 
+					goal.getPosition(), 
+					space.findShortestDistanceVector(
+							ship.getPosition(),  
+							goal.getPosition()
+					)
+			));
+			return new BetterObjectMovement(space, currentPosition, goal);
+		}
 	}
 	
 	
