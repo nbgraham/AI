@@ -22,7 +22,8 @@ public class GoToAsteroidAction extends GoToAction {
 		result.addResources(ship.getId(), goal.getResources());
 		//Remove the asteroid from the state 
 		result.removeObject(goal);
-		
+		result.addEnergy(ship.getId(), -1*getPathCost(state));
+
 		return result;
 	}
 	

@@ -46,7 +46,9 @@ public class LeastActionAgent extends TeamClient {
 	HashMap <UUID, Boolean> aimingForBase;
 	ArrayList<SpacewarGraphics> graphicsToAdd;
 	
-	LinkedList<Node> plan = null;
+	Planning planner = null;
+	boolean needToPlan = false;
+	int numShips = 0;
 	
 
 
@@ -56,12 +58,15 @@ public class LeastActionAgent extends TeamClient {
 	public Map<UUID, AbstractAction> getMovementStart(Toroidal2DPhysics space,
 			Set<AbstractActionableObject> actionableObjects) {
 		HashMap<UUID, AbstractAction> actions = new HashMap<UUID, AbstractAction>();
-
+		
+		HashSet<Ship> ships = new HashSet<Ship>();
+		
 		// loop through each ship
 		for (AbstractObject actionable :  actionableObjects) {
 			if (actionable instanceof Ship) {
 				Ship ship = (Ship) actionable;
-
+				ships.add(ship);
+				
 				AbstractAction action;
 				action = getLeastAction(space, ship);
 				actions.put(ship.getId(), action);
@@ -71,6 +76,16 @@ public class LeastActionAgent extends TeamClient {
 				actions.put(actionable.getId(), new DoNothingAction());
 			}
 		} 
+		
+		if (needToPlan) {
+			if (ships.size() != numShips) {
+				numShips = ships.size();
+				planner = new Planning(ships);
+			}
+			planner.search(space);
+			needToPlan = false;
+		}
+		
 		return actions;
 	}
 	
@@ -103,24 +118,27 @@ public class LeastActionAgent extends TeamClient {
 		AbstractAction newAction = null;
 		
 		if (space.getCurrentTimestep() > 0 && space.getCurrentTimestep() % 100 == 0) {
-			plan = Planning.search(space, ship);
+			needToPlan = true;
 		}
-		if (space.getCurrentTimestep() >= 100) {
-			Position prev = null;
-			Position next = null;
-			for (Node n : plan) {
-				next = n.state.at.get(ship.getId());
-				if (prev != null) {
-					graphicsToAdd.add(new LineGraphics(
-							prev, 
-							next, 
-							space.findShortestDistanceVector(
-									prev,  
-									next
-							)
-					));
+		if (planner != null) {
+			LinkedList<Node> plan = planner.getPath(ship.getId());
+			if (plan != null) {
+				Position prev = null;
+				Position next = null;
+				for (Node n : plan) {
+					next = n.state.at.get(ship.getId());
+					if (prev != null) {
+						graphicsToAdd.add(new LineGraphics(
+								prev, 
+								next, 
+								space.findShortestDistanceVector(
+										prev,  
+										next
+								)
+						));
+					}
+					prev = next;
 				}
-				prev = next;
 			}
 		}
 		

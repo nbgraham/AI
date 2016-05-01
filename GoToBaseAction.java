@@ -9,11 +9,16 @@ public class GoToBaseAction extends GoToAction {
 		this.ship = ship;
 		this.goal = base;
 	}
+	
+	public boolean isApplicable(StateRepresentation state) {
+		return super.isApplicable(state) && state.resources.get(ship.getId()).getMass() > 100; 
+	}
 
 	public StateRepresentation effects(StateRepresentation state) {
 		StateRepresentation r = new StateRepresentation(state);
 		//Set ship location to where the asteroid is
 		r.setAt(ship.getId(), goal.getPosition());
+		r.addEnergy(ship.getId(), -1*getPathCost(state));
 		return r;
 	}
 }
