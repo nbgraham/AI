@@ -20,10 +20,6 @@ public class GoToBeaconAction extends GoToAction {
 	 */
 	public StateRepresentation effects(StateRepresentation state) {
 		StateRepresentation result = super.effects(state);
-		//Set ship location to where the beacon is
-		result.setAt(ship.getId(), goal.getPosition());
-		//Add 2500 (energy in beacon) to ship
-		result.addEnergy(ship.getId(), -1*getPathCost(state));
 		//Remove the beacon from the state 
 		result.removeObject(goal);
 		return result;

@@ -62,6 +62,7 @@ public class StateRepresentation {
 		for (Base b : space.getBases()) {
 			if (b.getTeamName() == teamName) {
 				bases.add(b);
+				at.put(b.getId(), b.getPosition());
 			}
 		}
 	}

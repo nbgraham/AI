@@ -15,10 +15,6 @@ public class GoToBaseAction extends GoToAction {
 	}
 
 	public StateRepresentation effects(StateRepresentation state) {
-		StateRepresentation result = super.effects(state);
-		//Set ship location to where the asteroid is
-		result.setAt(ship.getId(), goal.getPosition());
-		result.addEnergy(ship.getId(), -1*getPathCost(state));
-		return result;
+		return super.effects(state);
 	}
 }

@@ -12,6 +12,7 @@ import spacesettlers.simulator.Toroidal2DPhysics;
 public class Planning {
 	HashMap<UUID, LinkedList<Node>> paths;
 	HashMap<UUID, UUID> shipToObjectMap;
+	static final int EXPLORATION_LIMIT = 25;
 	
 	public Planning(HashSet<Ship> teamShips) {
 		paths = new HashMap<UUID, LinkedList<Node>>();
@@ -36,8 +37,8 @@ public class Planning {
 		LinkedList<Node> path = null;
 		Node current;
 		int count = 0;
-		
-		while(count < 100) {
+		int maxExplore = (int) (EXPLORATION_LIMIT * 0.5 * (1+ paths.size()));
+		while(count < maxExplore) {
 			count++;
 			current = fringe.poll();
 			if (current == null) {
@@ -45,14 +46,13 @@ public class Planning {
 				break;
 			} else if (current.isGoal()) {
 				path = current.getPath();
-				System.out.println("Found goal");
+				System.out.println("Found goal. Count:" + count + " Path length: " + path.size());
 				break;
 			}
 			fringe.addAll(current.explore(shipToObjectMap));
-			//System.out.println("Exploring node");
 		}
 		
-		if (count == 100) System.err.println("Search took too long");
+		if (count == maxExplore) System.err.println("Search explored more than " + maxExplore + " nodes");
 		
 		paths.put(head.ship.getId(), path);
 		

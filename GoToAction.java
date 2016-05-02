@@ -1,6 +1,7 @@
 package grah8384;
 
 import spacesettlers.objects.AbstractObject;
+import spacesettlers.objects.Base;
 import spacesettlers.objects.Ship;
 import spacesettlers.utilities.Position;
 
@@ -30,9 +31,10 @@ public abstract class GoToAction{
 	
 	public StateRepresentation effects(StateRepresentation state) {
 		StateRepresentation result = new StateRepresentation(state);
-		Position p = goal.getPosition().deepCopy();
+		Position p = state.at.get(goal.getId()).deepCopy();
 		p.setTranslationalVelocity(BetterMovement.getGoalVelocity(result.space, result.at.get(ship.getId()), result.at.get(goal.getId())));
-		result.at.put(ship.getId(), p);
+		result.setAt(ship.getId(), p);
+		result.addEnergy(ship.getId(), -1*getPathCost(state));
 		return result;
 	}
 	
@@ -47,6 +49,18 @@ public abstract class GoToAction{
 	 * @return
 	 */
 	public double getPathCost(StateRepresentation state) {
-		return BetterObjectMovement.getEnergyCostNC(state.space, state.at.get(ship.getId()), ship.getMass(), goal.getPosition()) + 0.75*state.space.findShortestDistance(ship.getPosition(), goal.getPosition());
+		return BetterObjectMovement.getEnergyCostNC(state.space, state.at.get(ship.getId()), ship.getMass(), state.at.get(goal.getId())) 
+				+ 0.75*state.space.findShortestDistance(state.at.get(ship.getId()), state.at.get(goal.getId()))
+				+ 0.25*getDistanceToNearestBaseFromGoal(state);
+	}
+	
+	private double getDistanceToNearestBaseFromGoal(StateRepresentation state) {
+		double min = Double.MAX_VALUE;
+		for (Base b: state.bases) {
+			double dist = state.space.findShortestDistance(state.at.get(goal.getId()), state.at.get(b.getId()));
+			if (dist < min) min = dist;
+		}
+		if (min == Double.MAX_VALUE) return 0;
+		return min;
 	}
 }

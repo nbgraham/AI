@@ -66,19 +66,19 @@ public class Node implements Comparable<Node> {
 	}
 	
 	public double evaluate() {
-		if (pathCost == 0) return 0;
-		return resourcesCollected/pathCost;
+		if (resourcesCollected == 0) return Double.MAX_VALUE;
+		return pathCost/resourcesCollected;
 	}
 
 	@Override
 	public int compareTo(Node o) {
-		return -1 * Double.compare(this.evaluate(), o.evaluate());
+		return Double.compare(this.evaluate(), o.evaluate());
 	}
 	
 	public boolean isGoal() {
-		if (evaluate() < 0.5) return false;
-		for (Base b : state.bases) {
-			if (state.at(ship.getId(), b.getPosition())) return true;
+		if (action instanceof GoToBaseAction && evaluate() < 1.5) {
+			System.out.println(evaluate());
+			return true;
 		}
 		return false;
 	}
