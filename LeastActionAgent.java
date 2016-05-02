@@ -42,6 +42,7 @@ public class LeastActionAgent extends TeamClient {
 	Planning planner = null;
 	boolean needToPlan = false;
 	int numShips = 0;
+	HashMap<UUID, LinkedList<Node>> plans;
 	
     ArrayList<SpacewarGraphics> baseEvolve;
     Set<Base> teamBases;
@@ -114,45 +115,54 @@ public class LeastActionAgent extends TeamClient {
 	 */
 	private AbstractAction getLeastAction(Toroidal2DPhysics space,
 			Ship ship) {
-		AbstractAction current = ship.getCurrentAction();
+		AbstractAction currentAction = ship.getCurrentAction();
 		Position currentPosition = ship.getPosition();
 		UUID shipID = ship.getId();
 		AbstractObject goal = null;
 		
 		if (planner != null) {
-			LinkedList<Node> plan = planner.getPath(ship.getId());
-				if (planner.peek(shipID) != null) {
-//					if (planner.peek(shipID).action == null) plan.pop();
-//
-//					
-//					if (current instanceof BetterObjectMovement) {
-//						if (planner.peek(shipID).action.goal.getId() == ((BetterObjectMovement) current).getGoalObject().getId() &&
-//								current.isMovementFinished(space)) {
-//							planner.pop(shipID);
-//							//needToPlan = true;
-//						}
-//					}
+			LinkedList<Node> plan = plans.get(shipID);
+			if (plan == null) plan = plans.put(shipID, new LinkedList<Node>(planner.getPath(shipID)));
+				if (plan != null) {
+					Node currentNode = plan.peek();
+					AbstractObject currentGoal;
 					
-					//TODO Probably returns null after it has been collected
-					if (planner.peek(shipID) != null) {
-						goal = space.getObjectById(planner.getPath(shipID).get(1).action.goal.getId());
-						
-						Position prev = null;
-						Position next = null;
-						for (Node n : plan) {
-							next = n.state.at.get(ship.getId());
-							if (prev != null) {
-								graphicsToAdd.add(new LineGraphics(
-										prev, 
-										next, 
-										space.findShortestDistanceVector(
-												prev,  
-												next
-										)
-								));
-							}
-							prev = next;
+					if (currentNode.action == null) {
+						currentGoal = null;
+					} else {
+						currentGoal = space.getObjectById(currentNode.action.goal.getId());
+					}
+					
+					while (currentNode.action == null || currentGoal == null || !currentGoal.isAlive()) {
+						plan.pop();
+						currentNode = plan.peek();
+						currentGoal = space.getObjectById(currentNode.action.goal.getId());
+					}
+					
+					if (ship.getResources().getTotal() == 0 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
+						goal = null;
+						aimingForBase.put(ship.getId(), false);
+						needToPlan = true;
+					} else {
+						goal = space.getObjectById(plan.peek().action.goal.getId());
+					}
+							
+					//Draw plan
+					Position prev = null;
+					Position next = null;
+					for (Node n : planner.getPath(shipID)) {
+						next = n.state.at.get(shipID);
+						if (prev != null) {
+							graphicsToAdd.add(new LineGraphics(
+									prev, 
+									next, 
+									space.findShortestDistanceVector(
+											prev,  
+											next
+									)
+							));
 						}
+						prev = next;
 					}
 			}
 		}
@@ -167,12 +177,12 @@ public class LeastActionAgent extends TeamClient {
 				case SEEK_RESOURCE:
 					// did we bounce off the base?
 					if (ship.getResources().getTotal() == 0 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
-						current = null;
+						currentAction = null;
 						aimingForBase.put(ship.getId(), false);
 					}
 	
 					// otherwise aim for the asteroid
-					if (current == null || current.isMovementFinished(space)) {
+					if (currentAction == null || currentAction.isMovementFinished(space)) {
 						aimingForBase.put(ship.getId(), false);
 						goal = findBestAsteroid(space, ship);
 						if (goal != null) {
@@ -195,6 +205,7 @@ public class LeastActionAgent extends TeamClient {
 		if (goal == null){
 			return new DoNothingAction();
 		} else {
+			aimingForBase.put(ship.getId(), goal instanceof Base);
 			graphicsToAdd.add(new LineGraphics(
 					ship.getPosition(), 
 					goal.getPosition(), 
@@ -350,6 +361,7 @@ public class LeastActionAgent extends TeamClient {
 		aimingForBase = new HashMap<UUID, Boolean>();
 		graphicsToAdd = new ArrayList<SpacewarGraphics>();
 		teamBases = new HashSet<Base>();
+		plans = new HashMap<UUID, LinkedList<Node>>();
 	}
 
 	/**
