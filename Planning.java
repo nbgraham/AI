@@ -76,39 +76,4 @@ public class Planning {
 		if (paths.get(shipID) == null) return null;
 		return paths.get(shipID).pop();
 	}
-	
-	 /*
-	public static LinkedList<Node> search(Toroidal2DPhysics space, Ship ship) {
-		Node head = new Node(new StateRepresentation(space, ship.getTeamName()), ship);
-		LinkedList<Node> path = null;
-		
-		PriorityQueue<Node> fringe = new PriorityQueue<Node>();
-		fringe.add(head);
-		Node current;
-		int count = 0;
-		while(count < 200) {
-			count ++;
-			current = fringe.poll();
-			if (current == null) {
-				path = null;
-				System.err.println("current node is null");
-				break;
-			} else if (current.isGoal()) {
-				path = current.getPath();
-				System.out.println("Found goal: Count " + count);
-				break;
-			}
-			fringe.addAll(current.explore(shipToObjectMap));
-			System.out.println("Exploring node");
-		}
-		if (count == 200) {
-			System.err.println("Search took too long");
-			return null;
-		} else {
-			System.out.println(path);
-			return path;
-		}
-	}
-	*/
-
 }

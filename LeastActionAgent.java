@@ -381,36 +381,6 @@ public class LeastActionAgent extends TeamClient {
 			PurchaseCosts purchaseCosts) {
 
 		HashMap<UUID, PurchaseTypes> purchases = new HashMap<UUID, PurchaseTypes>();
-		/*
-		double BASE_BUYING_DISTANCE = 400;
-		boolean bought_base = false;
-
-		if (purchaseCosts.canAfford(PurchaseTypes.BASE, resourcesAvailable)) {
-			for (AbstractActionableObject actionableObject : actionableObjects) {
-				if (actionableObject instanceof Ship) {
-					Ship ship = (Ship) actionableObject;
-					Set<Base> bases = space.getBases();
-
-					// how far away is this ship to a base of my team?
-					boolean buyBase = true;
-					for (Base base : bases) {
-						if (base.getTeamName().equalsIgnoreCase(getTeamName())) {
-							double distance = space.findShortestDistance(ship.getPosition(), base.getPosition());
-							if (distance < BASE_BUYING_DISTANCE) {
-								buyBase = false;
-							}
-						}
-					}
-					if (buyBase) {
-						purchases.put(ship.getId(), PurchaseTypes.BASE);
-						bought_base = true;
-						//System.out.println("Buying a base!!");
-						break;
-					}
-				}
-			}		
-		} 
-		*/
 		
 		boolean bought_base = false;
 		 
@@ -419,18 +389,7 @@ public class LeastActionAgent extends TeamClient {
             for (AbstractActionableObject actionableObject : actionableObjects) {
                 if (actionableObject instanceof Ship) {
                     Ship ship = (Ship) actionableObject;
-                    //Set<Base> bases = space.getBases();
- 
-                    // how far away is this ship to a base of my team?
-                    /*boolean buyBase = true;
-                    for (Base base : bases) {
-                        if (base.getTeamName().equalsIgnoreCase(getTeamName())) {
-                            double distance = space.findShortestDistance(ship.getPosition(), base.getPosition());
-                            if (distance < BASE_BUYING_DISTANCE) {
-                                buyBase = false;
-                            }
-                        }
-                    }*/
+                    
                     boolean buyBase = false;
                     if(space.findShortestDistance(ship.getPosition(), target) < 200)
                         buyBase = true;
