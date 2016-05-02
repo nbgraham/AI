@@ -77,10 +77,6 @@ public class BetterMovement extends MoveAction{
 			}
 		}
 		
-		
-		
-		
-
 		return movement;
 	}
 
@@ -205,6 +201,30 @@ public class BetterMovement extends MoveAction{
 		);
 		
 		// .7 max, 1500 energy, 1000 pile, .25 distance
+	}
+	
+	public static int getEnergyCostNC(Toroidal2DPhysics space, Ship ship, Position targetLocation){
+		
+		Ship testShip = ship.deepClone();
+		int penalty = 0;
+		
+		
+		while(space.findShortestDistance(testShip.getPosition(), targetLocation) > Ship.SHIP_RADIUS){
+			Vector2D nextAccel = getLeastAction(space, testShip, targetLocation);
+			double linearAccel = nextAccel.getMagnitude();
+			double linearInertia = ship.getMass() * linearAccel;
+			penalty += (int) Math.floor(Toroidal2DPhysics.ENERGY_PENALTY * linearInertia);
+			double timeStep = space.getTimestep();
+			
+			Position nextPos = testShip.getPosition();
+			nextPos.setTranslationalVelocity(nextPos.getTranslationalVelocity().add(nextAccel.multiply(timeStep)));
+			nextPos.setX(nextPos.getX()+nextPos.getTranslationalVelocityX()*timeStep);
+			nextPos.setY(nextPos.getY()+nextPos.getTranslationalVelocityY()*timeStep);
+			
+		}
+		
+		
+		return penalty;
 	}
 	
 	public static int getEnergyCost(Toroidal2DPhysics space, Ship ship, Position targetLocation){

@@ -58,7 +58,7 @@ public class LeastActionAgent extends TeamClient {
 	public Map<UUID, AbstractAction> getMovementStart(Toroidal2DPhysics space,
 			Set<AbstractActionableObject> actionableObjects) {
 		
-		if (space.getCurrentTimestep() > 0 && space.getCurrentTimestep() % 50 == 0) {
+		if (space.getCurrentTimestep() % 50 == 0) {
 			needToPlan = true;
 		}
 		
@@ -120,30 +120,44 @@ public class LeastActionAgent extends TeamClient {
 			Ship ship) {
 		AbstractAction current = ship.getCurrentAction();
 		Position currentPosition = ship.getPosition();
-		
+		UUID shipID = ship.getId();
 		AbstractObject goal = null;
-
+		
 		if (planner != null) {
 			LinkedList<Node> plan = planner.getPath(ship.getId());
-			if (plan != null) {
-				goal = space.getObjectById(plan.get(1).action.goal.getId());
-				
-				Position prev = null;
-				Position next = null;
-				for (Node n : plan) {
-					next = n.state.at.get(ship.getId());
-					if (prev != null) {
-						graphicsToAdd.add(new LineGraphics(
-								prev, 
-								next, 
-								space.findShortestDistanceVector(
-										prev,  
-										next
-								)
-						));
+				if (planner.peek(shipID) != null) {
+					if (planner.peek(shipID).action == null) plan.pop();
+
+					
+					if (current instanceof BetterObjectMovement) {
+						if (planner.peek(shipID).action.goal.getId() == ((BetterObjectMovement) current).getGoalObject().getId() &&
+								current.isMovementFinished(space)) {
+							planner.pop(shipID);
+							//needToPlan = true;
+						}
 					}
-					prev = next;
-				}
+					
+					//TODO Probably returns null after it has been collected
+					if (planner.peek(shipID) != null) {
+						goal = space.getObjectById(planner.peek(shipID).action.goal.getId());
+						
+						Position prev = null;
+						Position next = null;
+						for (Node n : plan) {
+							next = n.state.at.get(ship.getId());
+							if (prev != null) {
+								graphicsToAdd.add(new LineGraphics(
+										prev, 
+										next, 
+										space.findShortestDistanceVector(
+												prev,  
+												next
+										)
+								));
+							}
+							prev = next;
+						}
+					}
 			}
 		}
 		

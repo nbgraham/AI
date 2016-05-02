@@ -13,17 +13,18 @@ public class GoToBeaconAction extends GoToAction {
 	public boolean isApplicable(StateRepresentation state) {
 		return super.isApplicable(state) && state.energy.get(ship.getId()) < 3000;
 	}
+	
 	/**
 	 * Add effects of this action to the state
 	 * @param state
 	 */
 	public StateRepresentation effects(StateRepresentation state) {
 		StateRepresentation r = new StateRepresentation(state);
-		//Set ship location to where the asteroid is
+		//Set ship location to where the beacon is
 		r.setAt(ship.getId(), goal.getPosition());
 		//Add 2500 (energy in beacon) to ship
 		r.addEnergy(ship.getId(), -1*getPathCost(state));
-		//Remove the asteroid from the state 
+		//Remove the beacon from the state 
 		r.removeObject(goal);
 		return r;
 	}

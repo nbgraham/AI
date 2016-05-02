@@ -39,6 +39,6 @@ public abstract class GoToAction{
 	 * @return
 	 */
 	public double getPathCost(StateRepresentation state) {
-		return BetterObjectMovement.getEnergyCost(state.space, ship, goal.getPosition()) + 0.75*state.space.findShortestDistance(ship.getPosition(), goal.getPosition());
+		return BetterObjectMovement.getEnergyCostNC(state.space, ship , goal.getPosition()) + 0.75*state.space.findShortestDistance(ship.getPosition(), goal.getPosition());
 	}
 }

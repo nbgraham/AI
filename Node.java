@@ -40,7 +40,6 @@ public class Node implements Comparable<Node> {
 			}
 		}
 		for (Base b : state.bases) {
-			if (shipToObjectMap.containsKey(b)) continue;
 			action = new GoToBaseAction(ship, b);
 			if (action.isApplicable(state)) {
 				possibleActions.add(createChild(action));

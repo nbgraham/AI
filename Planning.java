@@ -38,7 +38,7 @@ public class Planning {
 		Node current;
 		int count = 0;
 		
-		while(count < 200) {
+		while(count < 100) {
 			count++;
 			current = fringe.poll();
 			if (current == null) {
@@ -50,10 +50,10 @@ public class Planning {
 				break;
 			}
 			fringe.addAll(current.explore(shipToObjectMap));
-			System.out.println("Exploring node");
+			//System.out.println("Exploring node");
 		}
 		
-		if (count == 200) System.err.println("Search took too long");
+		if (count == 100) System.err.println("Search took too long");
 		
 		paths.put(head.ship.getId(), path);
 		
@@ -66,6 +66,16 @@ public class Planning {
 	
 	public LinkedList<Node> getPath(UUID shipID) {
 		return paths.get(shipID);
+	}
+	
+	public Node peek(UUID shipID) {
+		if (paths.get(shipID) == null) return null;
+		return paths.get(shipID).peek();
+	}
+	
+	public Node pop(UUID shipID) {
+		if (paths.get(shipID) == null) return null;
+		return paths.get(shipID).pop();
 	}
 	
 	 /*
