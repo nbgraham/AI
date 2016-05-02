@@ -142,6 +142,16 @@ public class BetterMovement extends MoveAction{
 		return movement;
 	}
 */	
+	private static Vector2D getLeastAction(Toroidal2DPhysics space, Position shipPosition, Position targetLocation){
+		Vector2D goalDistVector = space.findShortestDistanceVector(shipPosition, targetLocation);
+		
+		return move.pdControlMoveToGoal(
+				space, 
+				targetLocation, 
+				shipPosition, 
+				goalDistVector.unit().multiply(Toroidal2DPhysics.MAX_TRANSLATIONAL_VELOCITY*Math.sqrt(2)*.6).add(shipPosition.getTranslationalVelocity().negate())
+		);
+	}
 	
 	private static Vector2D getLeastAction(Toroidal2DPhysics space, Ship ship, Position targetLocation){
 		Vector2D goalDistVector = space.findShortestDistanceVector(ship.getPosition(), targetLocation);
@@ -203,26 +213,27 @@ public class BetterMovement extends MoveAction{
 		// .7 max, 1500 energy, 1000 pile, .25 distance
 	}
 	
-	public static int getEnergyCostNC(Toroidal2DPhysics space, Ship ship, Position targetLocation){
-		
-		Ship testShip = ship.deepClone();
+	public static Vector2D getGoalVelocity(Toroidal2DPhysics space, Position shipPosition, Position targetLocation) {
+		Vector2D goalDistVector = space.findShortestDistanceVector(shipPosition, targetLocation);
+		return goalDistVector.unit().multiply(Toroidal2DPhysics.MAX_TRANSLATIONAL_VELOCITY*Math.sqrt(2)*.6).add(shipPosition.getTranslationalVelocity().negate());
+	}
+	
+	public static int getEnergyCostNC(Toroidal2DPhysics space, Position shipPosition, int shipMass, Position targetLocation){
 		int penalty = 0;
 		
-		
-		while(space.findShortestDistance(testShip.getPosition(), targetLocation) > Ship.SHIP_RADIUS){
-			Vector2D nextAccel = getLeastAction(space, testShip, targetLocation);
+		while(space.findShortestDistance(shipPosition, targetLocation) > Ship.SHIP_RADIUS){
+			Vector2D nextAccel = getLeastAction(space, shipPosition, targetLocation);
 			double linearAccel = nextAccel.getMagnitude();
-			double linearInertia = ship.getMass() * linearAccel;
+			double linearInertia = shipMass * linearAccel;
 			penalty += (int) Math.floor(Toroidal2DPhysics.ENERGY_PENALTY * linearInertia);
 			double timeStep = space.getTimestep();
 			
-			Position nextPos = testShip.getPosition();
+			Position nextPos = shipPosition;
 			nextPos.setTranslationalVelocity(nextPos.getTranslationalVelocity().add(nextAccel.multiply(timeStep)));
 			nextPos.setX(nextPos.getX()+nextPos.getTranslationalVelocityX()*timeStep);
 			nextPos.setY(nextPos.getY()+nextPos.getTranslationalVelocityY()*timeStep);
 			
 		}
-		
 		
 		return penalty;
 	}

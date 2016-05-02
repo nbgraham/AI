@@ -119,20 +119,20 @@ public class LeastActionAgent extends TeamClient {
 		if (planner != null) {
 			LinkedList<Node> plan = planner.getPath(ship.getId());
 				if (planner.peek(shipID) != null) {
-					if (planner.peek(shipID).action == null) plan.pop();
-
-					
-					if (current instanceof BetterObjectMovement) {
-						if (planner.peek(shipID).action.goal.getId() == ((BetterObjectMovement) current).getGoalObject().getId() &&
-								current.isMovementFinished(space)) {
-							planner.pop(shipID);
-							//needToPlan = true;
-						}
-					}
+//					if (planner.peek(shipID).action == null) plan.pop();
+//
+//					
+//					if (current instanceof BetterObjectMovement) {
+//						if (planner.peek(shipID).action.goal.getId() == ((BetterObjectMovement) current).getGoalObject().getId() &&
+//								current.isMovementFinished(space)) {
+//							planner.pop(shipID);
+//							//needToPlan = true;
+//						}
+//					}
 					
 					//TODO Probably returns null after it has been collected
 					if (planner.peek(shipID) != null) {
-						goal = space.getObjectById(planner.peek(shipID).action.goal.getId());
+						goal = space.getObjectById(planner.getPath(shipID).get(1).action.goal.getId());
 						
 						Position prev = null;
 						Position next = null;

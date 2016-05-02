@@ -15,7 +15,7 @@ public class GoToAsteroidAction extends GoToAction {
 	 * @param state
 	 */
 	public StateRepresentation effects(StateRepresentation state) {
-		StateRepresentation result = new StateRepresentation(state);
+		StateRepresentation result = super.effects(state);
 		//Set ship location to where the asteroid is
 		result.setAt(ship.getId(), goal.getPosition());
 		//Get resources from asteroid

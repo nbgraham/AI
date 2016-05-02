@@ -2,6 +2,7 @@ package grah8384;
 
 import spacesettlers.objects.AbstractObject;
 import spacesettlers.objects.Ship;
+import spacesettlers.utilities.Position;
 
 public abstract class GoToAction{
 	Ship ship;
@@ -13,19 +14,26 @@ public abstract class GoToAction{
 	 * @return
 	 */
 	public boolean isApplicable(StateRepresentation state) {
+		if (!state.at.containsKey(ship.getId()) || !state.at.containsKey(goal.getId())) {
+			return false;
+		}
 		//If ship is not already at goal
 		if (state.at(ship.getId(), goal.getPosition())) {
 			return false;
 		}
 		//And ship has enough energy to make it to goal
-		if (BetterObjectMovement.getEnergyCost(state.space, ship, goal.getPosition()) > ship.getEnergy()) {
+		if (BetterObjectMovement.getEnergyCostNC(state.space, state.at.get(ship.getId()), ship.getMass(), state.at.get(goal.getId())) > state.energy.get(ship.getId())) {
 			return false;
 		}
 		return true;
 	}
 	
 	public StateRepresentation effects(StateRepresentation state) {
-		return null;
+		StateRepresentation result = new StateRepresentation(state);
+		Position p = goal.getPosition().deepCopy();
+		p.setTranslationalVelocity(BetterMovement.getGoalVelocity(result.space, result.at.get(ship.getId()), result.at.get(goal.getId())));
+		result.at.put(ship.getId(), p);
+		return result;
 	}
 	
 	public int getResources() {
@@ -39,6 +47,6 @@ public abstract class GoToAction{
 	 * @return
 	 */
 	public double getPathCost(StateRepresentation state) {
-		return BetterObjectMovement.getEnergyCostNC(state.space, ship , goal.getPosition()) + 0.75*state.space.findShortestDistance(ship.getPosition(), goal.getPosition());
+		return BetterObjectMovement.getEnergyCostNC(state.space, state.at.get(ship.getId()), ship.getMass(), goal.getPosition()) + 0.75*state.space.findShortestDistance(ship.getPosition(), goal.getPosition());
 	}
 }
