@@ -6,7 +6,6 @@ import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.UUID;
 
-import spacesettlers.clients.Team;
 import spacesettlers.objects.Ship;
 import spacesettlers.simulator.Toroidal2DPhysics;
 
