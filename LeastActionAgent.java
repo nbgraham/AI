@@ -122,8 +122,12 @@ public class LeastActionAgent extends TeamClient {
 		
 		if (planner != null) {
 			LinkedList<Node> plan = plans.get(shipID);
-			if (plan == null) plan = plans.put(shipID, new LinkedList<Node>(planner.getPath(shipID)));
-				if (plan != null) {
+			LinkedList<Node> pastPlan = null;
+			if (planner.getPath(shipID) != null) {
+				pastPlan = new LinkedList<Node>(planner.getPath(shipID));
+			}
+			if (plan == null) plan = plans.put(shipID, pastPlan);
+				if (plan != null && plan.size() > 0) {
 					Node currentNode = plan.peek();
 					AbstractObject currentGoal;
 					
@@ -142,7 +146,8 @@ public class LeastActionAgent extends TeamClient {
 					if (ship.getResources().getTotal() == 0 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
 						goal = null;
 						aimingForBase.put(ship.getId(), false);
-						needToPlan = true;
+						plan.pop();
+						return new DoNothingAction();
 					} else {
 						goal = space.getObjectById(plan.peek().action.goal.getId());
 					}
