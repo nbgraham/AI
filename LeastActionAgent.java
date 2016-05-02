@@ -43,6 +43,9 @@ public class LeastActionAgent extends TeamClient {
 	boolean needToPlan = false;
 	int numShips = 0;
 	
+    ArrayList<SpacewarGraphics> baseEvolve;
+    Set<Base> teamBases;
+    boolean once = true;
 
 
 	/**
@@ -312,6 +315,27 @@ public class LeastActionAgent extends TeamClient {
 		for (Asteroid asteroid : finishedAsteroids) {
 			asteroidToShipMap.remove(asteroid);
 		}
+		
+	    Set<Base> teamBases = new HashSet<Base>();
+        for(Base b : space.getBases()){
+            if(b.getTeamName().equalsIgnoreCase(this.getTeamName())){
+                teamBases.add(b);
+                //System.out.println("Added a base to the set.");
+            }
+        }
+       
+        if(!this.teamBases.equals(teamBases)){
+            once = true;
+            this.teamBases = teamBases;
+        }
+       
+        if(once){
+           
+            if(this.teamBases.size()>0){
+                baseEvolve = (new EvolutionModule(space, this.teamBases)).getGraphics();
+                once = false;
+            }
+        }
 
 
 	}
@@ -325,6 +349,7 @@ public class LeastActionAgent extends TeamClient {
 		asteroidToShipMap = new HashMap<UUID, Ship>();
 		aimingForBase = new HashMap<UUID, Boolean>();
 		graphicsToAdd = new ArrayList<SpacewarGraphics>();
+		teamBases = new HashSet<Base>();
 	}
 
 	/**
@@ -356,6 +381,7 @@ public class LeastActionAgent extends TeamClient {
 			PurchaseCosts purchaseCosts) {
 
 		HashMap<UUID, PurchaseTypes> purchases = new HashMap<UUID, PurchaseTypes>();
+		/*
 		double BASE_BUYING_DISTANCE = 400;
 		boolean bought_base = false;
 
@@ -384,6 +410,44 @@ public class LeastActionAgent extends TeamClient {
 				}
 			}		
 		} 
+		*/
+		
+		boolean bought_base = false;
+		 
+        if (purchaseCosts.canAfford(PurchaseTypes.BASE, resourcesAvailable)) {
+            Position target = new Position(Genome.maxFit.x, Genome.maxFit.y);
+            for (AbstractActionableObject actionableObject : actionableObjects) {
+                if (actionableObject instanceof Ship) {
+                    Ship ship = (Ship) actionableObject;
+                    //Set<Base> bases = space.getBases();
+ 
+                    // how far away is this ship to a base of my team?
+                    /*boolean buyBase = true;
+                    for (Base base : bases) {
+                        if (base.getTeamName().equalsIgnoreCase(getTeamName())) {
+                            double distance = space.findShortestDistance(ship.getPosition(), base.getPosition());
+                            if (distance < BASE_BUYING_DISTANCE) {
+                                buyBase = false;
+                            }
+                        }
+                    }*/
+                    boolean buyBase = false;
+                    if(space.findShortestDistance(ship.getPosition(), target) < 200)
+                        buyBase = true;
+                   
+                    if (buyBase) {
+                        purchases.put(ship.getId(), PurchaseTypes.BASE);
+                        bought_base = true;
+                        once = true;
+                        if(baseEvolve != null) baseEvolve.clear();
+                        //System.out.println("Buying a base!!");
+                        break;
+                    }
+                }
+            }      
+        }
+		
+		
 		
 		if (purchaseCosts.canAfford(PurchaseTypes.POWERUP_DOUBLE_MAX_ENERGY, resourcesAvailable)) {
 			for (AbstractActionableObject actionableObject : actionableObjects) {
