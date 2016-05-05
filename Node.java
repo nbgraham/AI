@@ -74,13 +74,6 @@ public class Node implements Comparable<Node> {
 		return Double.compare(this.evaluate(), o.evaluate());
 	}
 	
-	public boolean isGoal() {
-		if (action instanceof GoToBaseAction && evaluate() < 1.5) {
-			return true;
-		}
-		return false;
-	}
-	
 	public LinkedList<Node> getPath() {
 		Node current = this;
 		LinkedList<Node> result = new LinkedList<Node>();

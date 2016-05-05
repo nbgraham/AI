@@ -35,11 +35,12 @@ public abstract class GoToAction{
 	
 	public StateRepresentation effects(StateRepresentation state) {
 		StateRepresentation result = new StateRepresentation(state);
+		
 		Position p = state.at.get(goal.getId()).deepCopy();
 		p.setTranslationalVelocity(BetterMovement.getGoalVelocity(result.space, result.at.get(ship.getId()), result.at.get(goal.getId())));
 		result.setAt(ship.getId(), p);
+		
 		result.addEnergy(ship.getId(), -1*getEnergyCost(state));
-		result.addResources(ship.getId(), getResources());
 		return result;
 	}
 	
