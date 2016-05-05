@@ -3,6 +3,7 @@ package grah8384;
 import spacesettlers.objects.AbstractObject;
 import spacesettlers.objects.Base;
 import spacesettlers.objects.Ship;
+import spacesettlers.objects.resources.ResourcePile;
 import spacesettlers.utilities.Position;
 
 public abstract class GoToAction{
@@ -38,6 +39,7 @@ public abstract class GoToAction{
 		p.setTranslationalVelocity(BetterMovement.getGoalVelocity(result.space, result.at.get(ship.getId()), result.at.get(goal.getId())));
 		result.setAt(ship.getId(), p);
 		result.addEnergy(ship.getId(), -1*getEnergyCost(state));
+		result.addResources(ship.getId(), getResources());
 		return result;
 	}
 	
@@ -46,8 +48,8 @@ public abstract class GoToAction{
 
 	}
 	
-	public int getResources() {
-		return 0;
+	public ResourcePile getResources() {
+		return new ResourcePile();
 	}
 	
 	/**

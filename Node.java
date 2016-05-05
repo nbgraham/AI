@@ -61,7 +61,7 @@ public class Node implements Comparable<Node> {
 		result.parent = this;
 		result.state = action.effects(state);
 		result.pathCost = this.pathCost + action.getPathCost(state);
-		result.resourcesCollected = this.resourcesCollected + action.getResources();
+		result.resourcesCollected = this.resourcesCollected + action.getResources().getTotal();
 		return result;
 	}
 	

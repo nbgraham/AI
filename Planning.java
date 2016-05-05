@@ -25,13 +25,13 @@ public class Planning {
 		HashSet<UUID> takenObjects = new HashSet<UUID>();
 		
 		//Initialize fringe for each ship to have starting node
-		HashMap<UUID, PriorityQueue<Node>> shipTofringe = new HashMap<UUID, PriorityQueue<Node>>();
+		HashMap<UUID, PriorityQueue<Node>> shipToFringe = new HashMap<UUID, PriorityQueue<Node>>();
 		for (UUID shipID : paths.keySet()) {
 			Ship ship = (Ship) space.getObjectById(shipID);
 			Node head = new Node(new StateRepresentation(space, ship.getTeamName()), ship);
 			PriorityQueue<Node> fringe = new PriorityQueue<Node>();
 			fringe.add(head);
-			shipTofringe.put(shipID, fringe);
+			shipToFringe.put(shipID, fringe);
 		}
 		
 		Node current;
@@ -45,7 +45,8 @@ public class Planning {
 			HashMap<UUID, Node> goalIDToNode = new HashMap<UUID, Node>();
 			for (UUID shipID : paths.keySet()) {
 				if (paths.get(shipID) != null) continue; //Pass if a complete plan is already found
-				findAvailableGoal(shipID, shipTofringe, goalIDToNode, shipIDToNode);
+				shipIDToNode.put(shipID, shipToFringe.get(shipID).poll());
+//				findAvailableGoal(shipID, shipToFringe, goalIDToNode, shipIDToNode);
 			}
 			
 			//Add all chosen objects to taken objects set
@@ -69,8 +70,8 @@ public class Planning {
 					break;
 				}
 				
-				shipTofringe.get(shipID).clear();
-				shipTofringe.get(shipID).addAll(current.explore(takenObjects));
+				shipToFringe.get(shipID).clear();
+				shipToFringe.get(shipID).addAll(current.explore(takenObjects));
 			}
 		}
 		

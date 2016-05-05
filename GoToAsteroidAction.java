@@ -2,6 +2,7 @@ package grah8384;
 
 import spacesettlers.objects.Asteroid;
 import spacesettlers.objects.Ship;
+import spacesettlers.objects.resources.ResourcePile;
 
 public class GoToAsteroidAction extends GoToAction {
 	
@@ -28,8 +29,8 @@ public class GoToAsteroidAction extends GoToAction {
 		return result;
 	}
 	
-	public int getResources() {
-		return goal.getResources().getTotal();
+	public ResourcePile getResources() {
+		return goal.getResources();
 	}
 	
 	public double getPathCost(StateRepresentation state) {
