@@ -69,10 +69,19 @@ public class Planning {
 	}
 	
 	public AbstractObject getNextTarget(UUID shipID, Toroidal2DPhysics space, boolean shipAimingForBase) {
+		if (paths == null) return null;
+
 		LinkedList<Node> plan = paths.get(shipID);
+		if (plan == null) return null;
 		
 		Node currentNode = plan.peek();
-		AbstractObject currentGoal = space.getObjectById(currentNode.action.goal.getId());
+		AbstractObject currentGoal;
+		
+		if (currentNode.action == null) {
+			currentGoal = null;
+		} else {
+			currentGoal = space.getObjectById(currentNode.action.goal.getId());
+		}
 		
 		while (currentGoal == null || !currentGoal.isAlive()) {
 			plan.pop();

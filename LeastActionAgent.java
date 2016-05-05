@@ -40,7 +40,7 @@ public class LeastActionAgent extends TeamClient {
 	ArrayList<SpacewarGraphics> graphicsToAdd;
 	
 	Planning planner = null;
-	boolean needToPlan = false;
+	boolean needToPlan = true;
 	int numShips = 0;
 	HashMap<UUID, LinkedList<Node>> plans;
 	
@@ -125,14 +125,16 @@ public class LeastActionAgent extends TeamClient {
 		AbstractAction currentAction = ship.getCurrentAction();
 		Position currentPosition = ship.getPosition();
 		UUID shipID = ship.getId();
+				
+		AbstractObject goal = null;
 		
-		AbstractObject goal = planner.getNextTarget(shipID, space, aimingForBase.containsKey(shipID) && aimingForBase.get(shipID));
-		
-		if (goal == null) {
-			needToPlan = true;
-		}
-		
-		if (planner != null) {						
+		if (planner != null) {
+			goal = planner.getNextTarget(shipID, space, aimingForBase.containsKey(shipID) && aimingForBase.get(shipID));
+			
+			if (goal == null) {
+				needToPlan = true;
+			}
+
 			//Draw plan
 			Position prev = null;
 			Position next = null;
@@ -160,7 +162,7 @@ public class LeastActionAgent extends TeamClient {
 		if (goal == null) {
 			troyCodeCount++;
 			if (space.getCurrentTimestep() > 0) {
-				//System.out.println("Troy's code: " + troyCodeCount + "/" + space.getCurrentTimestep() + " " + Math.round((100 * troyCodeCount/space.getCurrentTimestep())) + "%");
+				System.out.println("Troy's code: " + troyCodeCount + "/" + space.getCurrentTimestep() + " " + Math.round((100 * troyCodeCount/space.getCurrentTimestep())) + "%");
 			}
 			switch(getState(space,ship)){
 				case SEEK_ENERGY:
@@ -197,6 +199,7 @@ public class LeastActionAgent extends TeamClient {
 		}
 		
 		if (goal == null){
+			needToPlan = true;
 			return new DoNothingAction();
 		} else {
 			graphicsToAdd.add(new LineGraphics(
