@@ -125,7 +125,12 @@ public class LeastActionAgent extends TeamClient {
 		AbstractAction currentAction = ship.getCurrentAction();
 		Position currentPosition = ship.getPosition();
 		UUID shipID = ship.getId();
-		AbstractObject goal = null;
+		
+		AbstractObject goal = planner.getNextTarget(shipID, space, aimingForBase.containsKey(shipID) && aimingForBase.get(shipID));
+		
+		if (goal == null) {
+			needToPlan = true;
+		}
 		
 		if (planner != null) {						
 			//Draw plan
