@@ -10,6 +10,10 @@ public class GoToAsteroidAction extends GoToAction {
 		this.goal = asteroid;
 	}
 	
+	public boolean isApplicable(StateRepresentation state) {
+		return super.isApplicable(state) && state.energy.get(ship.getId()) > 1500 && state.resources.get(ship.getId()).getTotal()/state.energy.get(ship.getId()) < 1;
+	}
+	
 	/**
 	 * Add effects of this action to the state
 	 * @param state
@@ -25,6 +29,10 @@ public class GoToAsteroidAction extends GoToAction {
 	}
 	
 	public int getResources() {
-		return goal.getResources().getMass();
+		return goal.getResources().getTotal();
+	}
+	
+	public double getPathCost(StateRepresentation state) {
+		return super.getPathCost(state)/goal.getResources().getTotal();
 	}
 }

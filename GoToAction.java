@@ -18,14 +18,17 @@ public abstract class GoToAction{
 		if (!state.at.containsKey(ship.getId()) || !state.at.containsKey(goal.getId())) {
 			return false;
 		}
+		
 		//If ship is not already at goal
 		if (state.at(ship.getId(), goal.getPosition())) {
 			return false;
 		}
+		
 		//And ship has enough energy to make it to goal
-		if (BetterObjectMovement.getEnergyCostNC(state.space, state.at.get(ship.getId()), ship.getMass(), state.at.get(goal.getId())) > state.energy.get(ship.getId())) {
-			return false;
-		}
+//		if (BetterObjectMovement.getEnergyCostNC(state.space, state.at.get(ship.getId()), ship.getMass(), state.at.get(goal.getId())) > state.energy.get(ship.getId())) {
+//			return false;
+//		} 
+		
 		return true;
 	}
 	
@@ -34,8 +37,13 @@ public abstract class GoToAction{
 		Position p = state.at.get(goal.getId()).deepCopy();
 		p.setTranslationalVelocity(BetterMovement.getGoalVelocity(result.space, result.at.get(ship.getId()), result.at.get(goal.getId())));
 		result.setAt(ship.getId(), p);
-		result.addEnergy(ship.getId(), -1*getPathCost(state));
+		result.addEnergy(ship.getId(), -1*getEnergyCost(state));
 		return result;
+	}
+	
+	public double getEnergyCost(StateRepresentation state) {
+		return BetterObjectMovement.getEnergyCostNC(state.space, state.at.get(ship.getId()), ship.getMass(), state.at.get(goal.getId()));
+
 	}
 	
 	public int getResources() {
@@ -49,9 +57,10 @@ public abstract class GoToAction{
 	 * @return
 	 */
 	public double getPathCost(StateRepresentation state) {
-		return BetterObjectMovement.getEnergyCostNC(state.space, state.at.get(ship.getId()), ship.getMass(), state.at.get(goal.getId())) 
-				+ 0.75*state.space.findShortestDistance(state.at.get(ship.getId()), state.at.get(goal.getId()))
-				+ 0.25 * getDistanceToNearestBaseFromGoal(state);
+		return getEnergyCost(state);
+//		return BetterObjectMovement.getEnergyCostNC(state.space, state.at.get(ship.getId()), ship.getMass(), state.at.get(goal.getId())) 
+//				+ 0.75*state.space.findShortestDistance(state.at.get(ship.getId()), state.at.get(goal.getId()))
+//				+ 0.25 * getDistanceToNearestBaseFromGoal(state);
 	}
 	
 	private double getDistanceToNearestBaseFromGoal(StateRepresentation state) {

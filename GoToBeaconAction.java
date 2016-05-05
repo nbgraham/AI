@@ -11,7 +11,7 @@ public class GoToBeaconAction extends GoToAction {
 	}
 	
 	public boolean isApplicable(StateRepresentation state) {
-		return super.isApplicable(state) && state.energy.get(ship.getId()) < 3000;
+		return super.isApplicable(state) && state.energy.get(ship.getId()) <= 1500;
 	}
 	
 	/**
@@ -25,7 +25,7 @@ public class GoToBeaconAction extends GoToAction {
 		return result;
 	}
 	
-	public double getPathCost(StateRepresentation state) {
-		return super.getPathCost(state) - 2500;
+	public double getEnergyCost(StateRepresentation state) {
+		return super.getEnergyCost(state) - 2500;
 	}
 }

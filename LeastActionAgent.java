@@ -57,9 +57,9 @@ public class LeastActionAgent extends TeamClient {
 	public Map<UUID, AbstractAction> getMovementStart(Toroidal2DPhysics space,
 			Set<AbstractActionableObject> actionableObjects) {
 		
-		if (space.getCurrentTimestep() % 50 == 0) {
-			needToPlan = true;
-		}
+//		if (space.getCurrentTimestep() % 50 == 0) {
+//			needToPlan = true;
+//		}
 		
 		HashSet<Ship> ships = new HashSet<Ship>();
 		for (AbstractObject actionable : actionableObjects) {
@@ -128,6 +128,10 @@ public class LeastActionAgent extends TeamClient {
 				
 		AbstractObject goal = null;
 		
+//		if (ship.getResources().getTotal()/ship.getEnergy() > 1) {
+//			goal = findBestBase(space, ship);
+//			aimingForBase.put(ship.getId(), true);
+//		} else 
 		if (planner != null) {
 			goal = planner.getNextTarget(shipID, space, aimingForBase.containsKey(shipID) && aimingForBase.get(shipID));
 			
@@ -213,8 +217,8 @@ public class LeastActionAgent extends TeamClient {
 		}
 		
 		if (currentAction instanceof BetterObjectMovement) {
-			if (((BetterObjectMovement) currentAction).getGoalObject().getId() == goal.getId()) {
-				return currentAction;
+			if (((BetterObjectMovement) currentAction).getGoalObject().getId() != goal.getId()) {
+				//needToPlan = true;
 			}
 		}
 		

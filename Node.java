@@ -29,11 +29,11 @@ public class Node implements Comparable<Node> {
 		this.ship = ship;
 	}
 	
-	public HashSet<Node> explore(HashMap<UUID,UUID> shipToObjectMap) {
+	public HashSet<Node> explore(HashSet<UUID> shipToObjectMap) {
 		GoToAction action;
 		possibleActions = new HashSet<Node>();
 		for (Beacon b : state.beacons) {
-			if (shipToObjectMap.containsKey(b)) continue;
+			if (shipToObjectMap.contains(b.getId())) continue;
 			action = new GoToBeaconAction(ship, b);
 			if (action.isApplicable(state)) {
 				possibleActions.add(createChild(action));
@@ -46,7 +46,7 @@ public class Node implements Comparable<Node> {
 			}
 		}
 		for (Asteroid a : state.asteroids) {
-			if (shipToObjectMap.containsKey(a)) continue;
+			if (shipToObjectMap.contains(a.getId())) continue;
 			action = new GoToAsteroidAction(ship, a);
 			if (action.isApplicable(state)) {
 				possibleActions.add(createChild(action));
@@ -66,8 +66,7 @@ public class Node implements Comparable<Node> {
 	}
 	
 	public double evaluate() {
-		if (resourcesCollected == 0) return Double.MAX_VALUE;
-		return pathCost/resourcesCollected;
+		return pathCost;
 	}
 
 	@Override

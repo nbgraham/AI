@@ -12,8 +12,7 @@ import spacesettlers.simulator.Toroidal2DPhysics;
 
 public class Planning {
 	HashMap<UUID, LinkedList<Node>> paths;
-	HashMap<UUID, UUID> shipToObjectMap;
-	static final int EXPLORATION_LIMIT = 25;
+	static final int EXPLORATION_LIMIT = 10;
 	
 	public Planning(HashSet<Ship> teamShips) {
 		paths = new HashMap<UUID, LinkedList<Node>>();
@@ -23,45 +22,86 @@ public class Planning {
 	}
 	
 	public void search(Toroidal2DPhysics space) {
-		shipToObjectMap = new HashMap<UUID, UUID>();
+		HashSet<UUID> takenObjects = new HashSet<UUID>();
+		
+		//Initialize fringe for each ship to have starting node
+		HashMap<UUID, PriorityQueue<Node>> shipTofringe = new HashMap<UUID, PriorityQueue<Node>>();
 		for (UUID shipID : paths.keySet()) {
 			Ship ship = (Ship) space.getObjectById(shipID);
 			Node head = new Node(new StateRepresentation(space, ship.getTeamName()), ship);
-			search(head);
+			PriorityQueue<Node> fringe = new PriorityQueue<Node>();
+			fringe.add(head);
+			shipTofringe.put(shipID, fringe);
+		}
+		
+		Node current;
+		int depth = 0;
+		
+		while(depth < EXPLORATION_LIMIT) {
+			depth++;
+			
+			//Assign unique best actions to ships
+			HashMap<UUID, Node> shipIDToNode = new HashMap<UUID, Node>();
+			HashMap<UUID, Node> goalIDToNode = new HashMap<UUID, Node>();
+			for (UUID shipID : paths.keySet()) {
+				if (paths.get(shipID) != null) continue; //Pass if a complete plan is already found
+				findAvailableGoal(shipID, shipTofringe, goalIDToNode, shipIDToNode);
+			}
+			
+			//Add all chosen objects to taken objects set
+			for (UUID shipID : shipIDToNode.keySet()) {
+				if (paths.get(shipID) != null) continue; //Pass if a complete plan is already found
+				if (shipIDToNode.get(shipID).action != null) takenObjects.add(shipIDToNode.get(shipID).action.goal.getId());
+			}
+			
+			//Explore each ship's node
+			for (UUID shipID : paths.keySet()) {
+				if (paths.get(shipID) != null) continue; //Pass if a complete plan is already found
+
+				current = shipIDToNode.get(shipID);
+				
+				if (current == null) {
+					System.err.println("Current node is null. Count: " + depth);
+					break;
+				} else if (current.action != null && current.action instanceof GoToBaseAction) {
+					paths.put(shipID, current.getPath());
+					System.out.println("Found goal. Count:" + depth + " Path length: " + paths.get(shipID).size() + ". Evaluate: " + current.evaluate());
+					break;
+				}
+				
+				shipTofringe.get(shipID).clear();
+				shipTofringe.get(shipID).addAll(current.explore(takenObjects));
+			}
+		}
+		
+		if (depth == EXPLORATION_LIMIT) {
+			System.err.println("Search went deeper than " + EXPLORATION_LIMIT);
 		}
 	}
-	
-	private void search(Node head) {
-		PriorityQueue<Node> fringe = new PriorityQueue<Node>();
-		fringe.add(head);
 		
-		LinkedList<Node> path = null;
-		Node current;
-		int count = 0;
-		int maxExplore = (int) (EXPLORATION_LIMIT * 0.7 * (1+ paths.size()));
-		while(count < maxExplore) {
-			count++;
-			current = fringe.poll();
-			if (current == null) {
-				System.err.println("current node is null");
-				break;
-			} else if (current.isGoal()) {
-				path = current.getPath();
-				System.out.println("Found goal. Count:" + count + " Path length: " + path.size() + ". Evaluate: " + current.evaluate());
-				break;
-			}
-			fringe.addAll(current.explore(shipToObjectMap));
+	private Node findAvailableGoal(UUID shipID, HashMap<UUID, PriorityQueue<Node>> fringe, HashMap<UUID, Node> goalObjectToNode,HashMap<UUID, Node> shipToNode) {
+		Node current = fringe.get(shipID).poll();
+		
+		//Initial node with no action
+		if (current.action == null) {
+			shipToNode.put(shipID, current);
+			return current;
 		}
 		
-		if (count == maxExplore) System.err.println("Search explored more than " + maxExplore + " nodes");
-		
-		paths.put(head.ship.getId(), path);
-		
-		if (path != null) {
-			for (Node node : path) {
-				if (node.action != null) shipToObjectMap.put(head.ship.getId(), node.action.goal.getId());
+		while (current != null && goalObjectToNode.containsKey(current.action.goal.getId())) { 
+			if (goalObjectToNode.get(current.action.goal.getId()).evaluate() <= current.evaluate()) {
+				current = fringe.get(shipID).poll();
+			} else {
+				shipToNode.put(shipID, current);
+				goalObjectToNode.put(current.action.goal.getId(), current);
+				findAvailableGoal(goalObjectToNode.get(current.action.goal.getId()).ship.getId(), fringe, goalObjectToNode, shipToNode);
 			}
 		}
+		
+		shipToNode.put(shipID, current);
+		goalObjectToNode.put(current.action.goal.getId(), current);
+		
+		return current;
 	}
 	
 	public LinkedList<Node> getPath(UUID shipID) {
@@ -69,13 +109,24 @@ public class Planning {
 	}
 	
 	public AbstractObject getNextTarget(UUID shipID, Toroidal2DPhysics space, boolean shipAimingForBase) {
-		if (paths == null) return null;
+		if (paths == null) {
+			System.err.println("Planner paths object is null");
+			return null;
+		}
 
 		LinkedList<Node> plan = paths.get(shipID);
-		if (plan == null) return null;
+		if (plan == null) {
+			System.err.println("Plan for ship is null");
+			return null;
+		}
 		
 		Node currentNode = plan.peek();
 		AbstractObject currentGoal;
+		
+		if (currentNode == null) {
+			System.err.println("First node in plan is null");
+			return null;
+		}
 		
 		if (currentNode.action == null) {
 			currentGoal = null;
