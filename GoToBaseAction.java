@@ -11,10 +11,11 @@ public class GoToBaseAction extends GoToAction {
 	}
 	
 	public boolean isApplicable(StateRepresentation state) {
-		return super.isApplicable(state) && state.resources.get(ship.getId()).getMass() > 100; 
+		return super.isApplicable(state) && state.resources.get(ship.getId()).getTotal()/state.energy.get(ship.getId()) > 1; 
 	}
 
-	public StateRepresentation effects(StateRepresentation state) {
-		return super.effects(state);
+	public int getResources() {
+		//Return a high value so go to base action (goal) is chosen in A* search quickly
+		return 100000;
 	}
 }

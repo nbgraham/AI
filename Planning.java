@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.UUID;
 
+import spacesettlers.objects.AbstractObject;
 import spacesettlers.objects.Ship;
 import spacesettlers.simulator.Toroidal2DPhysics;
 
@@ -37,7 +38,7 @@ public class Planning {
 		LinkedList<Node> path = null;
 		Node current;
 		int count = 0;
-		int maxExplore = (int) (EXPLORATION_LIMIT * 0.5 * (1+ paths.size()));
+		int maxExplore = (int) (EXPLORATION_LIMIT * 0.7 * (1+ paths.size()));
 		while(count < maxExplore) {
 			count++;
 			current = fringe.poll();
@@ -46,7 +47,7 @@ public class Planning {
 				break;
 			} else if (current.isGoal()) {
 				path = current.getPath();
-				System.out.println("Found goal. Count:" + count + " Path length: " + path.size());
+				System.out.println("Found goal. Count:" + count + " Path length: " + path.size() + ". Evaluate: " + current.evaluate());
 				break;
 			}
 			fringe.addAll(current.explore(shipToObjectMap));
@@ -67,13 +68,25 @@ public class Planning {
 		return paths.get(shipID);
 	}
 	
-	public Node peek(UUID shipID) {
-		if (paths.get(shipID) == null) return null;
-		return paths.get(shipID).peek();
-	}
-	
-	public Node pop(UUID shipID) {
-		if (paths.get(shipID) == null) return null;
-		return paths.get(shipID).pop();
+	public AbstractObject getNextTarget(UUID shipID, Toroidal2DPhysics space, boolean shipAimingForBase) {
+		LinkedList<Node> plan = paths.get(shipID);
+		
+		Node currentNode = plan.peek();
+		AbstractObject currentGoal = space.getObjectById(currentNode.action.goal.getId());
+		
+		while (currentGoal == null || !currentGoal.isAlive()) {
+			plan.pop();
+			currentNode = plan.peek();
+			currentGoal = space.getObjectById(currentNode.action.goal.getId());
+		}
+		
+		//Bounced off base?
+		if (currentNode.action instanceof GoToBaseAction && space.getObjectById(shipID).getResources().getTotal() == 0 && shipAimingForBase) {
+			//Done with go to base action
+			plan.pop();
+			return null;
+		} else {
+			return currentGoal;
+		}
 	}
 }

@@ -47,6 +47,8 @@ public class LeastActionAgent extends TeamClient {
     ArrayList<SpacewarGraphics> baseEvolve;
     Set<Base> teamBases;
     boolean once = true;
+    
+    int troyCodeCount = 0;
 
 
 	/**
@@ -59,15 +61,29 @@ public class LeastActionAgent extends TeamClient {
 			needToPlan = true;
 		}
 		
+		HashSet<Ship> ships = new HashSet<Ship>();
+		for (AbstractObject actionable : actionableObjects) {
+			if (actionable instanceof Ship) {
+				ships.add((Ship) actionable);
+			}
+		}
+		
+		if (needToPlan) {
+			if (ships.size() != numShips) {
+				numShips = ships.size();
+				planner = new Planning(ships);
+			}
+			planner.search(space);
+			needToPlan = false;
+		}
+		
 		HashMap<UUID, AbstractAction> actions = new HashMap<UUID, AbstractAction>();
 		
-		HashSet<Ship> ships = new HashSet<Ship>();
 		
 		// loop through each ship
 		for (AbstractObject actionable :  actionableObjects) {
 			if (actionable instanceof Ship) {
 				Ship ship = (Ship) actionable;
-				ships.add(ship);
 				
 				AbstractAction action;
 				action = getLeastAction(space, ship);
@@ -78,15 +94,6 @@ public class LeastActionAgent extends TeamClient {
 				actions.put(actionable.getId(), new DoNothingAction());
 			}
 		} 
-		
-		if (needToPlan) {
-			if (ships.size() != numShips) {
-				numShips = ships.size();
-				planner = new Planning(ships);
-			}
-			planner.search(space);
-			needToPlan = false;
-		}
 		
 		return actions;
 	}
@@ -120,59 +127,36 @@ public class LeastActionAgent extends TeamClient {
 		UUID shipID = ship.getId();
 		AbstractObject goal = null;
 		
-		if (planner != null) {
-			LinkedList<Node> plan = plans.get(shipID);
-			LinkedList<Node> pastPlan = null;
+		if (planner != null) {						
+			//Draw plan
+			Position prev = null;
+			Position next = null;
 			if (planner.getPath(shipID) != null) {
-				pastPlan = new LinkedList<Node>(planner.getPath(shipID));
-			}
-			if (plan == null) plan = plans.put(shipID, pastPlan);
-				if (plan != null && plan.size() > 0) {
-					Node currentNode = plan.peek();
-					AbstractObject currentGoal;
-					
-					if (currentNode.action == null) {
-						currentGoal = null;
-					} else {
-						currentGoal = space.getObjectById(currentNode.action.goal.getId());
+				for (Node n : planner.getPath(shipID)) {
+					next = n.state.at.get(shipID);
+					if (prev != null) {
+						graphicsToAdd.add(new LineGraphics(
+								prev, 
+								next, 
+								space.findShortestDistanceVector(
+										prev,  
+										next
+								)
+						));
 					}
-					
-					while (currentNode.action == null || currentGoal == null || !currentGoal.isAlive()) {
-						plan.pop();
-						currentNode = plan.peek();
-						currentGoal = space.getObjectById(currentNode.action.goal.getId());
-					}
-					
-					if (ship.getResources().getTotal() == 0 && aimingForBase.containsKey(ship.getId()) && aimingForBase.get(ship.getId())) {
-						goal = null;
-						aimingForBase.put(ship.getId(), false);
-						plan.pop();
-						return new DoNothingAction();
-					} else {
-						goal = space.getObjectById(plan.peek().action.goal.getId());
-					}
-							
-					//Draw plan
-					Position prev = null;
-					Position next = null;
-					for (Node n : planner.getPath(shipID)) {
-						next = n.state.at.get(shipID);
-						if (prev != null) {
-							graphicsToAdd.add(new LineGraphics(
-									prev, 
-									next, 
-									space.findShortestDistanceVector(
-											prev,  
-											next
-									)
-							));
-						}
-						prev = next;
-					}
+					prev = next;
+				}
+			} else {
+				System.err.println("Stored path is null");
 			}
 		}
+
 		
 		if (goal == null) {
+			troyCodeCount++;
+			if (space.getCurrentTimestep() > 0) {
+				//System.out.println("Troy's code: " + troyCodeCount + "/" + space.getCurrentTimestep() + " " + Math.round((100 * troyCodeCount/space.getCurrentTimestep())) + "%");
+			}
 			switch(getState(space,ship)){
 				case SEEK_ENERGY:
 					goal = findBestBeacon(space, ship);
@@ -210,7 +194,6 @@ public class LeastActionAgent extends TeamClient {
 		if (goal == null){
 			return new DoNothingAction();
 		} else {
-			aimingForBase.put(ship.getId(), goal instanceof Base);
 			graphicsToAdd.add(new LineGraphics(
 					ship.getPosition(), 
 					goal.getPosition(), 
@@ -219,8 +202,16 @@ public class LeastActionAgent extends TeamClient {
 							goal.getPosition()
 					)
 			));
-			return new BetterObjectMovement(space, currentPosition, goal);
 		}
+		
+		if (currentAction instanceof BetterObjectMovement) {
+			if (((BetterObjectMovement) currentAction).getGoalObject().getId() == goal.getId()) {
+				return currentAction;
+			}
+		}
+		
+		aimingForBase.put(ship.getId(), goal instanceof Base);
+		return new BetterObjectMovement(space, currentPosition, goal);		
 	}
 
 	/**

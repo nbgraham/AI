@@ -77,7 +77,6 @@ public class Node implements Comparable<Node> {
 	
 	public boolean isGoal() {
 		if (action instanceof GoToBaseAction && evaluate() < 1.5) {
-			System.out.println(evaluate());
 			return true;
 		}
 		return false;

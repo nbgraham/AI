@@ -50,8 +50,7 @@ public abstract class GoToAction{
 	 */
 	public double getPathCost(StateRepresentation state) {
 		return BetterObjectMovement.getEnergyCostNC(state.space, state.at.get(ship.getId()), ship.getMass(), state.at.get(goal.getId())) 
-				+ 0.75*state.space.findShortestDistance(state.at.get(ship.getId()), state.at.get(goal.getId()))
-				+ 0.25*getDistanceToNearestBaseFromGoal(state);
+				+ 0.75*state.space.findShortestDistance(state.at.get(ship.getId()), state.at.get(goal.getId()));
 	}
 	
 	private double getDistanceToNearestBaseFromGoal(StateRepresentation state) {
