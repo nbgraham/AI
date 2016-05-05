@@ -57,7 +57,7 @@ public class LeastActionAgent extends TeamClient {
 	public Map<UUID, AbstractAction> getMovementStart(Toroidal2DPhysics space,
 			Set<AbstractActionableObject> actionableObjects) {
 		
-//		if (space.getCurrentTimestep() % 50 == 0) {
+//		if (space.getCurrentTimestep() == 50) {
 //			needToPlan = true;
 //		}
 		
@@ -140,26 +140,26 @@ public class LeastActionAgent extends TeamClient {
 			}
 
 			//Draw plan
-			Position prev = null;
-			Position next = null;
-			if (planner.getPath(shipID) != null) {
-				for (Node n : planner.getPath(shipID)) {
-					next = n.state.at.get(shipID);
-					if (prev != null) {
-						graphicsToAdd.add(new LineGraphics(
-								prev, 
-								next, 
-								space.findShortestDistanceVector(
-										prev,  
-										next
-								)
-						));
-					}
-					prev = next;
-				}
-			} else {
-				System.err.println("Stored path is null");
-			}
+//			Position prev = null;
+//			Position next = null;
+//			if (planner.getPath(shipID) != null) {
+//				for (Node n : planner.getPath(shipID)) {
+//					next = n.state.at.get(shipID);
+//					if (prev != null) {
+//						graphicsToAdd.add(new LineGraphics(
+//								prev, 
+//								next, 
+//								space.findShortestDistanceVector(
+//										prev,  
+//										next
+//								)
+//						));
+//					}
+//					prev = next;
+//				}
+//			} else {
+//				System.err.println("Stored path is null");
+//			}
 		}
 
 		
@@ -218,7 +218,7 @@ public class LeastActionAgent extends TeamClient {
 		
 		if (currentAction instanceof BetterObjectMovement) {
 			if (((BetterObjectMovement) currentAction).getGoalObject().getId() != goal.getId()) {
-				//needToPlan = true;
+				needToPlan = true;
 			}
 		}
 		

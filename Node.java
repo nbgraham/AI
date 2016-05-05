@@ -55,6 +55,30 @@ public class Node implements Comparable<Node> {
 		return possibleActions;
 	}
 	
+	public HashSet<Node> explore() {
+		GoToAction action;
+		possibleActions = new HashSet<Node>();
+		for (Beacon b : state.beacons) {
+			action = new GoToBeaconAction(ship, b);
+			if (action.isApplicable(state)) {
+				possibleActions.add(createChild(action));
+			}
+		}
+		for (Base b : state.bases) {
+			action = new GoToBaseAction(ship, b);
+			if (action.isApplicable(state)) {
+				possibleActions.add(createChild(action));
+			}
+		}
+		for (Asteroid a : state.asteroids) {
+			action = new GoToAsteroidAction(ship, a);
+			if (action.isApplicable(state)) {
+				possibleActions.add(createChild(action));
+			}
+		}
+		return possibleActions;
+	}
+	
 	public Node createChild(GoToAction action) {
 		Node result = new Node(state, ship);
 		result.action = action;
