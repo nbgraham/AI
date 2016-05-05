@@ -57,10 +57,6 @@ public class LeastActionAgent extends TeamClient {
 	public Map<UUID, AbstractAction> getMovementStart(Toroidal2DPhysics space,
 			Set<AbstractActionableObject> actionableObjects) {
 		
-//		if (space.getCurrentTimestep() == 50) {
-//			needToPlan = true;
-//		}
-		
 		HashSet<Ship> ships = new HashSet<Ship>();
 		for (AbstractObject actionable : actionableObjects) {
 			if (actionable instanceof Ship) {
@@ -127,11 +123,7 @@ public class LeastActionAgent extends TeamClient {
 		UUID shipID = ship.getId();
 				
 		AbstractObject goal = null;
-		
-//		if (ship.getResources().getTotal()/ship.getEnergy() > 1) {
-//			goal = findBestBase(space, ship);
-//			aimingForBase.put(ship.getId(), true);
-//		} else 
+ 
 		if (planner != null) {
 			goal = planner.getNextTarget(shipID, space, aimingForBase.containsKey(shipID) && aimingForBase.get(shipID));
 			
@@ -139,27 +131,6 @@ public class LeastActionAgent extends TeamClient {
 				needToPlan = true;
 			}
 
-			//Draw plan
-//			Position prev = null;
-//			Position next = null;
-//			if (planner.getPath(shipID) != null) {
-//				for (Node n : planner.getPath(shipID)) {
-//					next = n.state.at.get(shipID);
-//					if (prev != null) {
-//						graphicsToAdd.add(new LineGraphics(
-//								prev, 
-//								next, 
-//								space.findShortestDistanceVector(
-//										prev,  
-//										next
-//								)
-//						));
-//					}
-//					prev = next;
-//				}
-//			} else {
-//				System.err.println("Stored path is null");
-//			}
 		}
 
 		
@@ -437,15 +408,6 @@ public class LeastActionAgent extends TeamClient {
 			}		
 		}
 		
-		/*if (purchaseCosts.canAfford(PurchaseTypes.POWERUP_SHIELD, resourcesAvailable)) {
-			for (AbstractActionableObject actionableObject : actionableObjects) {
-				if (actionableObject instanceof Ship) {
-					Ship ship = (Ship) actionableObject;
-					purchases.put(ship.getId(), PurchaseTypes.POWERUP_SHIELD);
-				}
-			}		
-		}*/
-		
 		// can I buy a ship?
 		if (purchaseCosts.canAfford(PurchaseTypes.SHIP, resourcesAvailable) && bought_base == false) {
 			for (AbstractActionableObject actionableObject : actionableObjects) {
@@ -483,23 +445,7 @@ public class LeastActionAgent extends TeamClient {
 					System.out.println("Doubled my max energy!");
 				}
 			}
-		}	
-		
-		/*for (AbstractActionableObject actionableObject : actionableObjects) {
-			if (actionableObject instanceof Ship) {
-				Ship ship = (Ship) actionableObject;
-				if(ship.getCurrentPowerups().contains(SpaceSettlersPowerupEnum.TOGGLE_SHIELD)){
-					if(willCollide(space, ship)){
-						if(!ship.isShielded())
-							powerUps.put(ship.getId(), SpaceSettlersPowerupEnum.TOGGLE_SHIELD);
-					}else{
-						if(ship.isShielded())
-							powerUps.put(ship.getId(), SpaceSettlersPowerupEnum.TOGGLE_SHIELD);
-					}
-				}
-			}
-		}*/
-		
+		}			
 		
 		return powerUps;
 	}

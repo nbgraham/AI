@@ -100,46 +100,4 @@ public class Planning {
 			return goal;
 		}
 	}
-	
-	public AbstractObject getTarget(UUID shipID, Toroidal2DPhysics space, boolean shipAimingForBase) {
-		if (paths == null) {
-			System.err.println("Planner paths object is null");
-			return null;
-		}
-
-		LinkedList<Node> plan = paths.get(shipID);
-		if (plan == null) {
-			System.err.println("Plan for ship is null");
-			return null;
-		}
-		
-		Node currentNode = plan.peek();
-		AbstractObject currentGoal;
-		
-		if (currentNode == null) {
-			System.err.println("First node in plan is null");
-			return null;
-		}
-		
-		if (currentNode.action == null) {
-			currentGoal = null;
-		} else {
-			currentGoal = space.getObjectById(currentNode.action.goal.getId());
-		}
-		
-		while (currentGoal == null || !currentGoal.isAlive()) {
-			plan.pop();
-			currentNode = plan.peek();
-			currentGoal = space.getObjectById(currentNode.action.goal.getId());
-		}
-		
-		//Bounced off base?
-		if (currentNode.action instanceof GoToBaseAction && space.getObjectById(shipID).getResources().getTotal() == 0 && shipAimingForBase) {
-			//Done with go to base action
-			plan.pop();
-			return null;
-		} else {
-			return currentGoal;
-		}
-	}
 }
